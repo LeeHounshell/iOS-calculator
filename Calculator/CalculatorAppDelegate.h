@@ -2,8 +2,8 @@
 //  CalculatorAppDelegate.h
 //  Calculator
 //
-//  Created by Lion User on 5/29/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Created by Lee Hounshell on 5/29/12.
+//  Copyright (c) 2012 H.A.R.L.I.E. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
