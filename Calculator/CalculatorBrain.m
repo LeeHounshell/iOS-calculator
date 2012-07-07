@@ -10,6 +10,7 @@
 
 @interface CalculatorBrain()
 @property (nonatomic, strong) NSMutableArray *programStack;
+@property (nonatomic, strong) NSMutableDictionary *variableValues;
 
 + (double)lastDisplayResult;
 + (void)setLastDisplayResult:(double)value;
@@ -19,6 +20,7 @@
 @implementation CalculatorBrain
 
 @synthesize programStack = _programStack;
+@synthesize variableValues = _variableValues;
 
 
 - (NSMutableArray *)programStack
@@ -30,24 +32,69 @@
     return _programStack;
 }
 
+- (NSMutableDictionary *)variableValues
+{
+    if (_variableValues == nil)
+    {
+        _variableValues = [[NSMutableDictionary alloc] init];
+    }
+    return _variableValues;
+}
+
+- (BOOL)setVariable:(NSString *)variable withValue:(NSString *)value
+{
+    NSLog(@"SET(%@ = %@)", variable, value);
+    [self.variableValues setValue:value forKey:variable];
+    [CalculatorBrain setLastDisplayResult:(double)0];
+    return YES;
+}
+
+- (NSString *)getAllVariableSubPrograms
+{
+    NSString *varValues = @"";
+    NSString *key;
+    for (key in [NSOrderedSet  orderedSetWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil]) {
+        NSArray *subProgram = [self.variableValues objectForKey:key];
+        if (subProgram) {
+            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"  %@=%@", key, [CalculatorBrain formatProgram:subProgram]]];
+        }
+    }
+    return varValues;
+}
+
 - (void)pushOperand:(double)operand
 {
     [self.programStack addObject:[NSNumber numberWithDouble:operand]];
 }
 
-- (double)performOperation:(NSString *)operation
+- (double)performOperation:(NSString *)operation usingVariableValues:(NSDictionary *)myVariables
 {
+    NSLog(@"performOperation %@ usingVariableValues:%@", operation, myVariables);
     if ([@"clear" isEqualToString:operation]) {
         [self.programStack removeAllObjects];
+        if (myVariables) { // use custom variables?
+            NSLog(@"using custom variables=%@", myVariables);
+            self.variableValues = [myVariables mutableCopy];
+        } // otherwise old variable settings are not cleared
         return (double)0;
     }
     [self.programStack addObject:operation];
-    return [CalculatorBrain runProgram:self.program];
+    return [CalculatorBrain runProgram:self.program usingVariableValues:myVariables];
 }
 
 - (id)program
 {
     return [self.programStack copy];
+}
+
+- (id)variables
+{
+    return [self.variableValues copy];
+}
+
+- (NSString *)description
+{
+    return [CalculatorBrain formatProgram:self.program];
 }
 
 
@@ -69,7 +116,7 @@ static  NSNumber *_lastResult = nil;
 //---------
 
 
-+ (double)popOperand:(NSMutableArray *)stack
++ (double)popOperandOffStack:(NSMutableArray *)stack
 {
     double result = 0;
     id topOfStack = [stack lastObject];
@@ -89,8 +136,8 @@ static  NSNumber *_lastResult = nil;
     {
         NSString *operation = topOfStack;
         // first process operations that take 0 arguments
-        if ([@"pi" isEqualToString:operation]) {
-            NSLog(@"pi");
+        if ([@"π" isEqualToString:operation]) {
+            NSLog(@"π");
             result = M_PI;
         }
         else if ([@"e" isEqualToString:operation]) {
@@ -99,7 +146,7 @@ static  NSNumber *_lastResult = nil;
         }
         // next process operations that take 1 argument
         else {
-            double topNumber = [self popOperand:stack];
+            double topNumber = [self popOperandOffStack:stack];
             if ([@"+/-" isEqualToString:operation]) {
                 NSLog(@"+/-");
                 result = -topNumber;
@@ -126,7 +173,7 @@ static  NSNumber *_lastResult = nil;
             }
             else {
                 // last process operations that take 2 arguments
-                double secondNumber = [self popOperand:stack];
+                double secondNumber = [self popOperandOffStack:stack];
                 double firstNumber = topNumber;
                 if ([@"+" isEqualToString:operation])
                 {
@@ -164,26 +211,69 @@ static  NSNumber *_lastResult = nil;
     return result;
 }
 
-- (NSString *)description
-{
-    return [NSString stringWithFormat:@"%@", (NSMutableArray *)self.program];
-}
-    
 + (double)runProgram:(id)program
 {
-    NSMutableArray *stack;
-    if ([program isKindOfClass:[NSArray class]]) {
-        stack = [program mutableCopy];
+    return [self runProgram:program usingVariableValues:nil];
+}
+    
++ (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues
+{
+    NSMutableArray *stack = [program mutableCopy];
+    NSLog(@"runProgram: %@ usingValuesFrom %@", [self descriptionOfProgram:stack], myVariableValues);
+    NSMutableArray *newProgram = [CalculatorBrain replaceVariablesInProgram:stack usingValuesFrom:myVariableValues];
+    NSLog(@"newProgram=%@", newProgram);
+    return [CalculatorBrain popOperandOffStack:newProgram];
+}
+                     
++ (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables
+{
+    NSLog(@"replaceVariablesInProgram %@ usingValuesFrom %@", program, myVariables);
+    if (! myVariables) {
+        NSLog(@"no variables to replace.");
+        return program; // unchanged
     }
-    NSLog(@"runProgram: %@", [self descriptionOfProgram:stack]);
-    double result = [self popOperand:stack];
-    [CalculatorBrain setLastDisplayResult:result];
-    return result;
+    NSMutableArray *newProgram = [[NSMutableArray alloc] init];
+    NSLog(@"replace variables=%@ in program=%@", myVariables, program);
+    int i;
+    for (i = 0; i < [program count]; i++) {
+        NSObject *object = [program objectAtIndex:i];
+        NSString *operator = (NSString *)object;
+        if ([@"A" isEqualToString:operator]
+         || [@"B" isEqualToString:operator]
+         || [@"C" isEqualToString:operator]
+         || [@"X" isEqualToString:operator]
+         || [@"Y" isEqualToString:operator]
+         || [@"Z" isEqualToString:operator])
+        {
+            double subValue = [CalculatorBrain runProgram:[myVariables objectForKey:operator] usingVariableValues:myVariables];
+            NSLog(@"calculated replacement subValue=%g for key=%@", subValue, operator);              
+            [newProgram insertObject:[NSNumber numberWithDouble:subValue] atIndex:i];
+            continue;
+        }
+        else {
+            NSLog(@"not a variable! object=%@", object);
+        }
+        [newProgram insertObject:object atIndex:i];
+    }
+    NSLog(@"newProgram=%@", newProgram);
+    return newProgram;
 }
 
 + (NSString *)descriptionOfProgram:(id)program
 {
-    return [NSString stringWithFormat:@"STACK = %@", (NSMutableArray *)program];
+    return [CalculatorBrain formatProgram:program];
+}
+
++ (NSString *)formatProgram:(NSArray *)theProgram
+{
+    NSCharacterSet *notAllowedChars = [NSCharacterSet characterSetWithCharactersInString:@"(),\n\t\""];
+    NSString *englishDescription = [NSString stringWithFormat:@"%@", theProgram];
+    englishDescription = [[englishDescription componentsSeparatedByCharactersInSet:notAllowedChars] componentsJoinedByString:@""];
+    // replace the unicode string for PI with the π character
+    englishDescription = [englishDescription stringByReplacingOccurrencesOfString:@"\\U03c0" withString:@"π"];
+    englishDescription = [englishDescription stringByCompressingWhitespaceTo:@" "];
+    NSLog(@"englishDescription = %@", englishDescription);
+    return englishDescription;
 }
 
 @end
