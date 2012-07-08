@@ -14,6 +14,9 @@
 
 + (double)lastDisplayResult;
 + (void)setLastDisplayResult:(double)value;
++ (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables;
++ (NSSet *)variablesUsedInProgram:(id)program;
++ (NSString *)formatProgram:(NSArray *)theProgram;
 @end
 
 
@@ -49,19 +52,6 @@
     return YES;
 }
 
-- (NSString *)getAllVariableSubPrograms
-{
-    NSString *varValues = @"";
-    NSString *key;
-    for (key in [NSOrderedSet  orderedSetWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil]) {
-        NSArray *subProgram = [self.variableValues objectForKey:key];
-        if (subProgram) {
-            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"  %@=%@", key, [CalculatorBrain formatProgram:subProgram]]];
-        }
-    }
-    return varValues;
-}
-
 - (void)pushOperand:(double)operand
 {
     [self.programStack addObject:[NSNumber numberWithDouble:operand]];
@@ -69,11 +59,9 @@
 
 - (double)performOperation:(NSString *)operation usingVariableValues:(NSDictionary *)myVariables
 {
-    NSLog(@"performOperation %@ usingVariableValues:%@", operation, myVariables);
     if ([@"clear" isEqualToString:operation]) {
         [self.programStack removeAllObjects];
         if (myVariables) { // use custom variables?
-            NSLog(@"using custom variables=%@", myVariables);
             self.variableValues = [myVariables mutableCopy];
         } // otherwise old variable settings are not cleared
         return (double)0;
@@ -137,38 +125,30 @@ static  NSNumber *_lastResult = nil;
         NSString *operation = topOfStack;
         // first process operations that take 0 arguments
         if ([@"π" isEqualToString:operation]) {
-            NSLog(@"π");
             result = M_PI;
         }
         else if ([@"e" isEqualToString:operation]) {
-            NSLog(@"e");
             result = M_E;
         }
         // next process operations that take 1 argument
         else {
             double topNumber = [self popOperandOffStack:stack];
             if ([@"+/-" isEqualToString:operation]) {
-                NSLog(@"+/-");
                 result = -topNumber;
             }
             else if ([@"sin" isEqualToString:operation]) {
-                NSLog(@"sin(%g)", topNumber);
                 result = sin(topNumber);
             }
             else if ([@"cos" isEqualToString:operation]) {
-                NSLog(@"cos(%g)", topNumber);
                 result = cos(topNumber);
             }
             else if ([@"sqrt" isEqualToString:operation]) {
-                NSLog(@"sqrt(%g)", topNumber);
                 result = sqrt(topNumber);
             }
             else if ([@"log" isEqualToString:operation]) {
-                NSLog(@"log(%g)", topNumber);
                 result = log(topNumber);
             }
             else if ([@"%" isEqualToString:operation]) {
-                NSLog(@"percent(%g)", topNumber);
                 result = topNumber / 100.0;
             }
             else {
@@ -177,22 +157,18 @@ static  NSNumber *_lastResult = nil;
                 double firstNumber = topNumber;
                 if ([@"+" isEqualToString:operation])
                 {
-                    NSLog(@"%g + %g", secondNumber, firstNumber);
                     result = secondNumber + firstNumber;
                 }
                 else if ([@"-" isEqualToString:operation])
                 {
-                    NSLog(@"%g - %g", secondNumber, firstNumber);
                     result = secondNumber - firstNumber;
                 }
                 else if ([@"*" isEqualToString:operation])
                 {
-                    NSLog(@"%g * %g", secondNumber, firstNumber);
                     result = secondNumber * firstNumber;
                 }
                 else if ([@"/" isEqualToString:operation])
                 {
-                    NSLog(@"%g / %g", secondNumber, firstNumber);
                     if (secondNumber && firstNumber) {
                         result = secondNumber / firstNumber;
                     }
@@ -219,44 +195,55 @@ static  NSNumber *_lastResult = nil;
 + (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues
 {
     NSMutableArray *stack = [program mutableCopy];
-    NSLog(@"runProgram: %@ usingValuesFrom %@", [self descriptionOfProgram:stack], myVariableValues);
-    NSMutableArray *newProgram = [CalculatorBrain replaceVariablesInProgram:stack usingValuesFrom:myVariableValues];
-    NSLog(@"newProgram=%@", newProgram);
-    return [CalculatorBrain popOperandOffStack:newProgram];
+    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:program];
+    if ([variablesUsed count]) {
+        NSLog(@"found variables we need to evaluate..");
+        stack = [CalculatorBrain replaceVariablesInProgram:stack usingValuesFrom:myVariableValues];
+    }
+    return [CalculatorBrain popOperandOffStack:stack];
 }
                      
 + (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables
 {
-    NSLog(@"replaceVariablesInProgram %@ usingValuesFrom %@", program, myVariables);
-    if (! myVariables) {
-        NSLog(@"no variables to replace.");
+    if (! myVariables || (! [program isKindOfClass:[NSArray class]])) {
+        NSLog(@"nothing to replace.");
         return program; // unchanged
     }
     NSMutableArray *newProgram = [[NSMutableArray alloc] init];
-    NSLog(@"replace variables=%@ in program=%@", myVariables, program);
-    int i;
-    for (i = 0; i < [program count]; i++) {
-        NSObject *object = [program objectAtIndex:i];
-        NSString *operator = (NSString *)object;
-        if ([@"A" isEqualToString:operator]
-         || [@"B" isEqualToString:operator]
-         || [@"C" isEqualToString:operator]
-         || [@"X" isEqualToString:operator]
-         || [@"Y" isEqualToString:operator]
-         || [@"Z" isEqualToString:operator])
-        {
-            double subValue = [CalculatorBrain runProgram:[myVariables objectForKey:operator] usingVariableValues:myVariables];
-            NSLog(@"calculated replacement subValue=%g for key=%@", subValue, operator);              
-            [newProgram insertObject:[NSNumber numberWithDouble:subValue] atIndex:i];
-            continue;
+    NSSet *possibleVariables = [[NSSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+    for (id programElement in program) {
+        if ([programElement isKindOfClass:[NSString class]]) {
+            NSString *operator = [NSString stringWithString:(NSString *)programElement];
+            if ([possibleVariables containsObject:operator]) {
+                double subValue = [CalculatorBrain runProgram:[myVariables objectForKey:operator] usingVariableValues:myVariables];
+                NSLog(@"calculated replacement subValue=%g for key=%@", subValue, operator);
+                [newProgram insertObject:[NSNumber numberWithDouble:subValue]atIndex:[newProgram count]];
+                continue;
+            }
         }
-        else {
-            NSLog(@"not a variable! object=%@", object);
-        }
-        [newProgram insertObject:object atIndex:i];
+        [newProgram insertObject:programElement atIndex:[newProgram count]];
     }
     NSLog(@"newProgram=%@", newProgram);
     return newProgram;
+}
+
++ (NSSet *)variablesUsedInProgram:(id)program;
+{
+    NSMutableSet *varNames = [[NSMutableSet alloc] init];
+    if ([program isKindOfClass:[NSArray class]]) {
+        NSSet *possibleVariables = [[NSSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+        for (int i = 0; i < [program count]; i++) {
+            NSString *operator = (NSString *)[program objectAtIndex:i];
+            if ([possibleVariables containsObject:operator])
+            {
+                [varNames addObject:operator];
+            }
+        }
+    }
+    if (! [varNames count]) {
+        return nil;
+    }
+    return [varNames copy];
 }
 
 + (NSString *)descriptionOfProgram:(id)program

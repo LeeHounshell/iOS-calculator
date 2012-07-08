@@ -12,9 +12,6 @@
 
 @interface CalculatorViewController ()
 
-- (void)useDefaultButtonFunctionality;
-- (void)useRestrictedButtonFunctionality;
-
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL userPressedVariableSET;
 @property (nonatomic, strong) CalculatorBrain *brain;
@@ -60,7 +57,6 @@
 
 - (IBAction)digitPressed:(UIButton *)sender
 {
-    NSLog(@"got %@", sender.currentTitle);
     if (! self.userIsInTheMiddleOfEnteringANumber) {
         self.display.text = @"0";
     }
@@ -74,7 +70,6 @@
 
 - (IBAction)decimalPressed
 {
-    NSLog(@"decimalPressed");
     if (! self.userIsInTheMiddleOfEnteringANumber) {
         self.display.text = @"0";
     }
@@ -89,7 +84,6 @@
 - (IBAction)changeSignPressed:(UIButton *)sender
 {
     if (self.userIsInTheMiddleOfEnteringANumber) {
-        NSLog(@"change sign (number in progress)");
         NSRange minus = [self.display.text rangeOfString:@"-"];
         if (minus.location == NSNotFound) {
             self.display.text = [@"-" stringByAppendingString:self.display.text];
@@ -100,7 +94,6 @@
         [self updateKeystrokesWithEquals:NO];
     }
     else {
-        NSLog(@"execute change sign operation");
         [self operationPressed:sender];
     }
 }
@@ -110,7 +103,6 @@
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
-    NSLog(@"do operation %@", sender.currentTitle);
     double result = [self.brain performOperation:sender.currentTitle usingVariableValues:[self.brain variables]];
     self.display.text = [NSString stringWithFormat:@"%g", result];
     self.userIsInTheMiddleOfEnteringANumber = NO;
@@ -123,7 +115,6 @@
 
 - (IBAction)enterPressed
 {
-    NSLog(@"[ENTER] pressed.");
     [self.brain pushOperand:[self.display.text doubleValue]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     [self updateKeystrokesWithEquals:NO];
@@ -131,7 +122,6 @@
 
 - (IBAction)backspacePressed
 {
-    NSLog(@"backspace");
     if (self.display.text.length > 1) {
         self.display.text = [self.display.text substringToIndex:self.display.text.length - 1];
     }
@@ -143,7 +133,6 @@
 
 - (IBAction)clearEntryPressed
 {
-    NSLog(@"clear entry");
     self.display.text = @"0";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     if (self.userPressedVariableSET) {
@@ -154,26 +143,25 @@
 
 - (IBAction)clearPressed
 {
-    // NOTE: clear does not reset variable values
-    NSLog(@"clear program stack");
+    // NOTE: clear does not reset variable content
     [self clearEntryPressed];
     [self.brain performOperation:@"clear" usingVariableValues:nil];
     [self updateKeystrokesWithEquals:NO];
+    self.variable.text = @"";
 }
 
 - (IBAction)variablePressed:(UIButton *)sender
 {
     if (self.userPressedVariableSET) {
         // the entire currently entered program gets assigned to a variable
-        NSArray *variableValue = [self.brain program];
-        if (NSNotFound == [variableValue indexOfObject:sender.currentTitle]) {
-            self.variable.text = [self.variable.text stringByAppendingString:@"  "];
-            [[self brain] setVariable:sender.currentTitle withValue:variableValue];
+        NSArray *theProgram = [self.brain program];
+        if (NSNotFound == [theProgram indexOfObject:sender.currentTitle]) {
+            [[self brain] setVariable:sender.currentTitle withValue:theProgram];
             [self useDefaultButtonFunctionality];
-            self.variable.text = [self.brain getAllVariableSubPrograms];
+            [sender setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
         }
         else {
-            NSLog(@"ERROR: recursive variable value");
+            NSLog(@"ERROR: recursive variable content");
         }
         [self clearPressed];
     }
@@ -182,15 +170,28 @@
         if (variableValue) {
             [self operationPressed:sender];
         }
-        else {
-            NSLog(@"the variable %@ is UNASSIGNED", sender.currentTitle);
+        else { // undefined variable
+            self.display.text = @"0";
+            [self enterPressed];
         }
+        // now update the variable label text
+        NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
+        NSMutableSet *allVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
+        [allVariablesUsed addObject:[NSString stringWithFormat:@"%@", sender.currentTitle]];
+        NSString *varValues = @"";
+        NSString *key;
+        for (key in allVariablesUsed) {
+            NSArray *subProgram = [[self.brain variables] objectForKey:key];
+            if (subProgram) {
+                varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"   %@=%@", key, [CalculatorBrain descriptionOfProgram:subProgram]]];
+            }
+        }
+        self.variable.text = varValues;
     }
 }
 
 - (IBAction)setVariablePressed
 {
-    NSLog(@"SET");
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
@@ -200,12 +201,29 @@
 
 - (void)useDefaultButtonFunctionality
 {
-    NSLog(@"restore all disabled buttons to active");
+    // restore all disabled buttons to active
+    for (UIView *view in [[self view] subviews]) {
+        if ([view isKindOfClass:[UIButton class]]) {
+            UIButton *button = (UIButton *)view;
+            [button setEnabled:YES];
+            [button setAlpha:1];
+        }
+    }
 }
 
 - (void)useRestrictedButtonFunctionality
 {
-    NSLog(@"disable all buttons except: CLR CE A B C X Y Z");
+    // disable all buttons except: CLR CE A B C X Y Z
+    NSSet *keepButtons = [[NSSet alloc] initWithObjects:@"CLR", @"CE", @"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+    for (UIView *view in [[self view] subviews]) {
+        if ([view isKindOfClass:[UIButton class]]) {
+            UIButton *button = (UIButton *)view;
+            if (! [keepButtons containsObject:button.currentTitle]) {
+                [button setEnabled:NO];
+                [button setAlpha:0.3];
+            }
+        }
+    }
 }
 
 - (void)updateKeystrokesWithEquals:(BOOL)showResult
@@ -214,7 +232,6 @@
     if (showResult) {
         resultString = [resultString stringByAppendingString:@" ="];
     }
-    NSLog (@"inNumber=%d keystrokes: %@", self.userIsInTheMiddleOfEnteringANumber, resultString);
     self.keystrokes.text = resultString;
 }
 

@@ -13,7 +13,6 @@
 
 - (void)pushOperand:(double)operand;
 - (BOOL)setVariable:(NSString *)variable withValue:(NSArray *)value;
-- (NSString *)getAllVariableSubPrograms;
 - (double)performOperation:(NSString *)operation usingVariableValues:(NSDictionary *)variables;
 - (NSString *)description;
 
@@ -21,9 +20,9 @@
 @property (readonly) id variables;
 
 + (double)runProgram:(id)program;
-+ (double)runProgram:(id)program
- usingVariableValues:(NSDictionary *)myVariableValues;
++ (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues;
 
 + (NSString *)descriptionOfProgram:(id)program;
++ (NSSet *)variablesUsedInProgram:(id)program;
 
 @end
