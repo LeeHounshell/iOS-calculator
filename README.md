@@ -1,5 +1,5 @@
-ios-class
-=========
+iOS-calculator
+==============
 
 I'm participating in "CODING TOGETHER: Apps for iPhone & iPad" on
 piazza.com this summer.
