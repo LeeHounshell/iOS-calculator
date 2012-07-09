@@ -78,7 +78,7 @@
     for (key in allVariablesUsed) {
         NSDictionary *subProgram = [[self.brain variables] objectForKey:key];
         if (subProgram) {
-            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"   %@=%@", key, [CalculatorBrain descriptionOfProgram:subProgram]]];
+            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"[%@=%@] ", key, [CalculatorBrain descriptionOfProgram:subProgram]]];
         }
     }
     self.variable.text = [NSString stringWithString:varValues];
@@ -133,6 +133,7 @@
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
+    NSLog(@"operationPressed=%@", sender.currentTitle);
     double result = [self.brain performOperation:sender.currentTitle usingVariableValues:[self.brain variables]];
     [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
@@ -170,6 +171,11 @@
         [self useDefaultButtonFunctionality];
         self.userPressedVariableSET = NO;
     }
+    // dump content of CalculatorBrain for debug
+    NSLog(@"------------------------------------");
+    NSLog(@"VARIABLES=%@", [self.brain variables]);
+    NSLog(@"PROGRAM=%@", [self.brain program]);
+    NSLog(@"------------------------------------");
 }
 
 - (IBAction)clearPressed

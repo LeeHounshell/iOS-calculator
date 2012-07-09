@@ -16,6 +16,7 @@
 + (double)lastDisplayResult;
 + (void)setLastDisplayResult:(double)value;
 + (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables;
++(void)replaceVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value;
 + (NSSet *)variablesUsedInProgram:(id)program;
 + (NSString *)formatProgram:(NSArray *)theProgram;
 @end
@@ -198,7 +199,13 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
 + (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues
 {
     NSMutableArray *programStack = [program mutableCopy];
-    programStack = [CalculatorBrain replaceVariablesInProgram:programStack usingValuesFrom:myVariableValues];
+    NSSet *variablesUsed = nil;
+    do {
+        NSLog(@"REPLACE: program=%@ usingValuesFrom=%@", program, myVariableValues);
+        programStack = [CalculatorBrain replaceVariablesInProgram:programStack usingValuesFrom:myVariableValues];
+        variablesUsed = [CalculatorBrain variablesUsedInProgram:programStack];
+        
+    } while ([variablesUsed count]);
     return [CalculatorBrain popOperandOffStack:programStack];
 }
                      
@@ -217,23 +224,26 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
         return program; // unchanged
     }
     ++recursionLevel;
-    NSMutableArray *newProgram = [[NSMutableArray alloc] init];
+    NSMutableArray *newProgram = [[NSMutableArray alloc] initWithArray:program];
     NSSet *possibleVariables = [[NSSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
     for (id programElement in program) {
         if ([programElement isKindOfClass:[NSString class]]) {
             NSString *operator = [NSString stringWithString:(NSString *)programElement];
+            if ([possibleVariables containsObject:operator]) {
+                NSArray *replacementProgram = [myVariables objectForKey:operator];
+                variablesUsed = [CalculatorBrain variablesUsedInProgram:replacementProgram];
+                [alreadyReplaced minusSet:variablesUsed];
+            }
             if ([alreadyReplaced containsObject:operator]) {
                 continue;
             }
             if ([possibleVariables containsObject:operator]) {
-                [alreadyReplaced addObject:operator];
                 double subValue = [CalculatorBrain runProgram:[myVariables objectForKey:operator] usingVariableValues:myVariables];
-                NSLog(@"calculated replacement subValue=%g for key=%@", subValue, operator);
-                [newProgram insertObject:[NSNumber numberWithDouble:subValue]atIndex:[newProgram count]];
+                [self replaceVariable:operator inProgram:newProgram withValue:subValue];
+                [alreadyReplaced addObject:operator];
                 continue;
             }
         }
-        [newProgram insertObject:programElement atIndex:[newProgram count]];
     }
     NSLog(@"newProgram=%@", newProgram);
     --recursionLevel;
@@ -241,6 +251,19 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
         alreadyReplaced = nil;
     }
     return newProgram;
+}
+
++(void)replaceVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value
+{
+    NSLog(@"calculated replacement subValue=%g for key=%@ in newProgram=%@", value, operator,newProgram);
+    while (YES) {
+        int index = [newProgram indexOfObject:operator];
+        if (NSNotFound == index) {
+            break;
+        }
+        [newProgram replaceObjectAtIndex:index withObject:[NSNumber numberWithDouble:value]];
+    }
+    NSLog(@"after replace key=%@: newProgram=%@", operator, newProgram);
 }
 
 + (NSSet *)variablesUsedInProgram:(id)program;
