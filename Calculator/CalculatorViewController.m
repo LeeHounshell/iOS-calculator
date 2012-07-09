@@ -206,18 +206,47 @@
     return newProgram;
 }
 
+- (BOOL)variableLoopsEquations:(NSString *)operation usingVariableValues:(NSDictionary *)myVariableValues
+{
+    // detect self-referencing variable equations
+    NSArray *program = [myVariableValues objectForKey:operation];
+    NSMutableSet *allVariablesUsed = nil;
+    if (program) {
+        allVariablesUsed = [[CalculatorBrain variablesUsedInProgram:program] mutableCopy];
+        for (NSString *variable in [allVariablesUsed copy]) {
+            NSArray *subProgram = [myVariableValues objectForKey:variable];
+            if (subProgram) {
+                NSSet *subVariablesUsed = [CalculatorBrain variablesUsedInProgram:subProgram];
+                if ([subVariablesUsed count]) {
+                    [allVariablesUsed unionSet:subVariablesUsed];
+                }
+            }
+        }
+    }
+    return [allVariablesUsed containsObject:operation];
+}
+
 - (IBAction)variablePressed:(UIButton *)sender
 {
     static int recursionLevel = 0;
     if (self.userPressedVariableSET) {
         self.userPressedVariableSET = NO;
-        // the entire currently entered program gets assigned to the specified variable
         NSArray *theProgram = [self.brain program];
+        // the entire currently entered program gets assigned to the specified variable
         if (NSNotFound != [theProgram indexOfObject:sender.currentTitle]) {
             // handle recursive variable expressions!
             NSArray *origVariableContent = [[self.brain variables] objectForKey:sender.currentTitle];
             theProgram = [self combinePrograms:theProgram and:origVariableContent forKey:sender.currentTitle];
             NSLog(@"redefined %@ to be %@", sender.currentTitle, theProgram);
+        }
+        // check for circular references that can't be resolved
+        NSMutableDictionary *testVariables = [[self.brain variables] mutableCopy];
+        [testVariables removeObjectForKey:sender.currentTitle];
+        [testVariables setValue:theProgram forKey:sender.currentTitle];
+        if ([self variableLoopsEquations:sender.currentTitle usingVariableValues:testVariables]) {
+            [self updateDisplayWithText:@"ERROR"];
+            [self useDefaultButtonFunctionality];
+            return;
         }
         // update the variable's content and change button color
         [[self brain] setVariable:sender.currentTitle withValue:theProgram];
