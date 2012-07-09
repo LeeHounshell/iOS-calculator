@@ -7,6 +7,7 @@
 //
 
 #import "CalculatorBrain.h"
+#import "PostfixToInfix.h"
 
 @interface CalculatorBrain()
 @property (nonatomic, strong) NSMutableArray *programStack;
@@ -44,9 +45,11 @@
     return _variableValues;
 }
 
-- (BOOL)setVariable:(NSString *)variable withValue:(NSString *)value
+- (BOOL)setVariable:(NSString *)variable withValue:(NSArray *)value
 {
-    NSLog(@"SET(%@ = %@)", variable, value);
+    if (!value || ! [value count]) {
+        value = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)0], nil];
+    }
     [self.variableValues setValue:value forKey:variable];
     [CalculatorBrain setLastDisplayResult:(double)0];
     return YES;
@@ -70,12 +73,12 @@
     return [CalculatorBrain runProgram:self.program usingVariableValues:myVariables];
 }
 
-- (id)program
+- (id)program // copy returns NSArray
 {
     return [self.programStack copy];
 }
 
-- (id)variables
+- (id)variables // copy returns NSDictionary
 {
     return [self.variableValues copy];
 }
@@ -87,7 +90,7 @@
 
 
 //---------
-static  NSNumber *_lastResult = nil;
+static  NSNumber *_lastResult = nil; // used to supply a default value when operation pressed but empty stack
 
 + (double)lastDisplayResult
 {
@@ -145,7 +148,7 @@ static  NSNumber *_lastResult = nil;
             else if ([@"sqrt" isEqualToString:operation]) {
                 result = sqrt(topNumber);
             }
-            else if ([@"log" isEqualToString:operation]) {
+            else if ([@"ln" isEqualToString:operation]) {
                 result = log(topNumber);
             }
             else if ([@"%" isEqualToString:operation]) {
@@ -194,27 +197,36 @@ static  NSNumber *_lastResult = nil;
     
 + (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues
 {
-    NSMutableArray *stack = [program mutableCopy];
-    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:program];
-    if ([variablesUsed count]) {
-        NSLog(@"found variables we need to evaluate..");
-        stack = [CalculatorBrain replaceVariablesInProgram:stack usingValuesFrom:myVariableValues];
-    }
-    return [CalculatorBrain popOperandOffStack:stack];
+    NSMutableArray *programStack = [program mutableCopy];
+    programStack = [CalculatorBrain replaceVariablesInProgram:programStack usingValuesFrom:myVariableValues];
+    return [CalculatorBrain popOperandOffStack:programStack];
 }
                      
 + (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables
 {
-    if (! myVariables || (! [program isKindOfClass:[NSArray class]])) {
+    static int recursionLevel = 0;
+    static NSMutableSet *alreadyReplaced = nil; // used to detect recursion without adding new arguments to fixed API
+    if (! alreadyReplaced) {
+        alreadyReplaced = [[NSMutableSet alloc] init];
+    }
+    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:program];
+    if (! myVariables || ! [myVariables count] || ! [variablesUsed count]
+        || ! [program isKindOfClass:[NSArray class]]
+        || ! [myVariables isKindOfClass:[NSDictionary class]]) {
         NSLog(@"nothing to replace.");
         return program; // unchanged
     }
+    ++recursionLevel;
     NSMutableArray *newProgram = [[NSMutableArray alloc] init];
     NSSet *possibleVariables = [[NSSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
     for (id programElement in program) {
         if ([programElement isKindOfClass:[NSString class]]) {
             NSString *operator = [NSString stringWithString:(NSString *)programElement];
+            if ([alreadyReplaced containsObject:operator]) {
+                continue;
+            }
             if ([possibleVariables containsObject:operator]) {
+                [alreadyReplaced addObject:operator];
                 double subValue = [CalculatorBrain runProgram:[myVariables objectForKey:operator] usingVariableValues:myVariables];
                 NSLog(@"calculated replacement subValue=%g for key=%@", subValue, operator);
                 [newProgram insertObject:[NSNumber numberWithDouble:subValue]atIndex:[newProgram count]];
@@ -224,6 +236,10 @@ static  NSNumber *_lastResult = nil;
         [newProgram insertObject:programElement atIndex:[newProgram count]];
     }
     NSLog(@"newProgram=%@", newProgram);
+    --recursionLevel;
+    if (! recursionLevel) {
+        alreadyReplaced = nil;
+    }
     return newProgram;
 }
 
@@ -233,10 +249,13 @@ static  NSNumber *_lastResult = nil;
     if ([program isKindOfClass:[NSArray class]]) {
         NSSet *possibleVariables = [[NSSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
         for (int i = 0; i < [program count]; i++) {
-            NSString *operator = (NSString *)[program objectAtIndex:i];
-            if ([possibleVariables containsObject:operator])
-            {
-                [varNames addObject:operator];
+            id programElement = [program objectAtIndex:i];
+            if ([programElement isKindOfClass:[NSString class]]) {
+                NSString *operator = (NSString *)programElement;
+                if ([possibleVariables containsObject:operator])
+                {
+                    [varNames addObject:operator];
+                }
             }
         }
     }
@@ -254,7 +273,7 @@ static  NSNumber *_lastResult = nil;
 + (NSString *)formatProgram:(NSArray *)theProgram
 {
     NSCharacterSet *notAllowedChars = [NSCharacterSet characterSetWithCharactersInString:@"(),\n\t\""];
-    NSString *englishDescription = [NSString stringWithFormat:@"%@", theProgram];
+    NSString *englishDescription = [NSString stringWithFormat:@"%@", [PostfixToInfix convert:theProgram]];
     englishDescription = [[englishDescription componentsSeparatedByCharactersInSet:notAllowedChars] componentsJoinedByString:@""];
     // replace the unicode string for PI with the π character
     englishDescription = [englishDescription stringByReplacingOccurrencesOfString:@"\\U03c0" withString:@"π"];

@@ -55,15 +55,42 @@
     return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
 }
 
+- (void)updateDisplayWithText:(NSString *)someText
+{
+    self.display.text = [NSString stringWithString:someText];
+    if (2 <= [self.display.text length]) {
+        if ('0' == [self.display.text characterAtIndex:0]
+            && '.' != [self.display.text characterAtIndex:1]) {  // leading zeroes?
+            self.display.text = [self.display.text substringFromIndex:1];
+        }
+    }
+}
+
+- (void)updateVariableDisplay:(NSString *)variableKeypress
+{
+    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
+    NSMutableSet *allVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
+    if (variableKeypress) {
+        [allVariablesUsed addObject:[NSString stringWithFormat:@"%@", variableKeypress]];
+    }
+    NSString *varValues = @"";
+    NSString *key;
+    for (key in allVariablesUsed) {
+        NSDictionary *subProgram = [[self.brain variables] objectForKey:key];
+        if (subProgram) {
+            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"   %@=%@", key, [CalculatorBrain descriptionOfProgram:subProgram]]];
+        }
+    }
+    self.variable.text = [NSString stringWithString:varValues];
+}
+
 - (IBAction)digitPressed:(UIButton *)sender
 {
     if (! self.userIsInTheMiddleOfEnteringANumber) {
-        self.display.text = @"0";
+        [self updateDisplayWithText:@"0"];
     }
-    self.display.text = [self.display.text stringByAppendingString:sender.currentTitle];
-    if ('0' == [self.display.text characterAtIndex:0]) {  // leading zeroes?
-        self.display.text = [self.display.text substringFromIndex:1];
-    }
+    NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@%@", self.display.text, sender.currentTitle];
+    [self updateDisplayWithText:newDisplay];
     self.userIsInTheMiddleOfEnteringANumber = YES;
     [self updateKeystrokesWithEquals:NO];    
 }
@@ -71,11 +98,12 @@
 - (IBAction)decimalPressed
 {
     if (! self.userIsInTheMiddleOfEnteringANumber) {
-        self.display.text = @"0";
+        [self updateDisplayWithText:@"0"];
     }
     NSRange range = [self.display.text rangeOfString:@"."];
-    if (range.location == NSNotFound) {
-        self.display.text = [self.display.text stringByAppendingString:@"."];
+    if (NSNotFound == range.location) {
+        NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@.", self.display.text];
+        [self updateDisplayWithText:newDisplay];
         self.userIsInTheMiddleOfEnteringANumber = YES;
     }
     [self updateKeystrokesWithEquals:NO];
@@ -85,11 +113,13 @@
 {
     if (self.userIsInTheMiddleOfEnteringANumber) {
         NSRange minus = [self.display.text rangeOfString:@"-"];
-        if (minus.location == NSNotFound) {
-            self.display.text = [@"-" stringByAppendingString:self.display.text];
+        if (NSNotFound == minus.location) {
+            NSString *newDisplay = [[NSString alloc] initWithFormat:@"-%@", self.display.text];
+            [self updateDisplayWithText:newDisplay];
         }
         else {
-            self.display.text = [self.display.text substringFromIndex:1];
+            NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@", [self.display.text substringFromIndex:1]];
+            [self updateDisplayWithText:newDisplay];
         }
         [self updateKeystrokesWithEquals:NO];
     }
@@ -104,7 +134,7 @@
         [self enterPressed];
     }
     double result = [self.brain performOperation:sender.currentTitle usingVariableValues:[self.brain variables]];
-    self.display.text = [NSString stringWithFormat:@"%g", result];
+    [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     BOOL evaluate = YES;
     if ([@"π" isEqualToString:sender.currentTitle] || [@"e" isEqualToString:sender.currentTitle]) {
@@ -123,17 +153,18 @@
 - (IBAction)backspacePressed
 {
     if (self.display.text.length > 1) {
-        self.display.text = [self.display.text substringToIndex:self.display.text.length - 1];
+        NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@", [self.display.text substringToIndex:self.display.text.length - 1]];
+        [self updateDisplayWithText:newDisplay];
     }
     else {
-        self.display.text = @"0";
+        [self updateDisplayWithText:@"0"];
         self.userIsInTheMiddleOfEnteringANumber = NO;
     }
 }
 
 - (IBAction)clearEntryPressed
 {
-    self.display.text = @"0";
+    [self updateDisplayWithText:@"0"];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     if (self.userPressedVariableSET) {
         [self useDefaultButtonFunctionality];
@@ -147,47 +178,72 @@
     [self clearEntryPressed];
     [self.brain performOperation:@"clear" usingVariableValues:nil];
     [self updateKeystrokesWithEquals:NO];
-    self.variable.text = @"";
+    [self updateVariableDisplay:nil];
+}
+
+// helper method for recursive definition of variable
+- (NSArray *)combinePrograms:(NSArray *)theProgram and:(NSArray *)origVariableContent forKey:(NSString *)variableKey
+{
+    NSArray *newProgram = [[NSArray alloc] init];
+    for (int i = 0; i < [theProgram count]; i++) {
+        id programElement = [theProgram objectAtIndex:i];
+        if ([programElement isKindOfClass:[NSString class]]) {
+            NSString *operator = (NSString *)programElement;
+            if ([variableKey isEqualToString:operator]) {
+                // we need to substitute using origVariableContent
+                newProgram = [newProgram arrayByAddingObjectsFromArray:origVariableContent];
+                continue;
+            }
+        }
+        newProgram = [newProgram arrayByAddingObject:programElement];
+    }
+    return newProgram;
 }
 
 - (IBAction)variablePressed:(UIButton *)sender
 {
+    static int recursionLevel = 0;
     if (self.userPressedVariableSET) {
-        // the entire currently entered program gets assigned to a variable
+        self.userPressedVariableSET = NO;
+        // the entire currently entered program gets assigned to the specified variable
         NSArray *theProgram = [self.brain program];
-        if (NSNotFound == [theProgram indexOfObject:sender.currentTitle]) {
-            [[self brain] setVariable:sender.currentTitle withValue:theProgram];
-            [self useDefaultButtonFunctionality];
-            [sender setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
+        if (NSNotFound != [theProgram indexOfObject:sender.currentTitle]) {
+            // handle recursive variable expressions!
+            NSArray *origVariableContent = [[self.brain variables] objectForKey:sender.currentTitle];
+            theProgram = [self combinePrograms:theProgram and:origVariableContent forKey:sender.currentTitle];
+            NSLog(@"redefined %@ to be %@", sender.currentTitle, theProgram);
+        }
+        // update the variable's content and change button color
+        [[self brain] setVariable:sender.currentTitle withValue:theProgram];
+        [self useDefaultButtonFunctionality];
+        [sender setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
+        if (! recursionLevel) {
+            [self clearPressed];
         }
         else {
-            NSLog(@"ERROR: recursive variable content");
+            // we used a variable without first doing a SET
+            // it will be set to whatever is shown in the display
+            [self operationPressed:sender];
+            return;
         }
-        [self clearPressed];
     }
     else {
+        //----------------------------------------
+        // here a variable is being used as an operand
         NSArray *variableValue = [[self.brain variables] objectForKey:sender.currentTitle];
         if (variableValue) {
             [self operationPressed:sender];
         }
-        else { // undefined variable
-            self.display.text = @"0";
-            [self enterPressed];
+        else { // but it is an undefined variable so create it now
+            [self updateDisplayWithText:@"0"];
+            [self setVariablePressed];
+            ++recursionLevel;
+            [self variablePressed:sender];
+            --recursionLevel;
         }
-        // now update the variable label text
-        NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
-        NSMutableSet *allVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
-        [allVariablesUsed addObject:[NSString stringWithFormat:@"%@", sender.currentTitle]];
-        NSString *varValues = @"";
-        NSString *key;
-        for (key in allVariablesUsed) {
-            NSArray *subProgram = [[self.brain variables] objectForKey:key];
-            if (subProgram) {
-                varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"   %@=%@", key, [CalculatorBrain descriptionOfProgram:subProgram]]];
-            }
-        }
-        self.variable.text = varValues;
     }
+    // now update the variable label text
+    [self updateVariableDisplay:sender.currentTitle];
 }
 
 - (IBAction)setVariablePressed
@@ -206,7 +262,7 @@
         if ([view isKindOfClass:[UIButton class]]) {
             UIButton *button = (UIButton *)view;
             [button setEnabled:YES];
-            [button setAlpha:1];
+            [button setAlpha:1.0];
         }
     }
 }
