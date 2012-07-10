@@ -1,5 +1,5 @@
-iOS-calculator
-==============
+RPN iOS-calculator
+==================
 
 I'm participating in "CODING TOGETHER: Apps for iPhone & iPad" on
 piazza.com this summer.
@@ -9,10 +9,11 @@ The Calculator posted here is functionally extended from assignment 2 with varia
 Each of the variable buttons may hold an equation (that can reference other equation variables).
 This lets you do complex variable substitutions for up to 6 equations.
 
+![RPN iOS-calculator](http://harlie.com/images/iOS-calculator.jpg)
+
 This work is Copyright 2012 Lee Hounshell, and 
 is licensed under a Creative Commons Attribution-NonCommercial 3.0 
 Unported License. See http://creativecommons.org/licenses/by-nc/3.0 for
 a license details.
 
-[image]: http://harlie.com/images/iOS-calculator.png "Stanford CS193P iOS-calculator"
-
+[RPN iOS-calculator]: (http://harlie.com/images/iOS-calculator.jpg "Stanford CS193P iOS-calculator")
