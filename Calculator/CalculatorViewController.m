@@ -213,12 +213,20 @@
     NSMutableSet *allVariablesUsed = nil;
     if (program) {
         allVariablesUsed = [[CalculatorBrain variablesUsedInProgram:program] mutableCopy];
-        for (NSString *variable in [allVariablesUsed copy]) {
-            NSArray *subProgram = [myVariableValues objectForKey:variable];
-            if (subProgram) {
-                NSSet *subVariablesUsed = [CalculatorBrain variablesUsedInProgram:subProgram];
-                if ([subVariablesUsed count]) {
-                    [allVariablesUsed unionSet:subVariablesUsed];
+        BOOL checkAgain = YES;
+        while (checkAgain) {
+            checkAgain = NO;
+            for (NSString *variable in [allVariablesUsed copy]) {
+                NSArray *subProgram = [myVariableValues objectForKey:variable];
+                if (subProgram) {
+                    NSSet *subVariablesUsed = [CalculatorBrain variablesUsedInProgram:subProgram];
+                    if ([subVariablesUsed count]) {
+                        int oldCount = [allVariablesUsed count];
+                        [allVariablesUsed unionSet:subVariablesUsed];
+                        if (oldCount != [allVariablesUsed count]) { // anything changed?
+                            checkAgain = YES;
+                        }
+                    }
                 }
             }
         }
