@@ -29,5 +29,16 @@
     return [nonemptyComps componentsJoinedByString:seperator];
 }
 
+- (NSString *)stripParensFromEnds
+{
+    NSString *result = self;
+    if ([result length] >= 3
+     && '(' == [result characterAtIndex:0]
+     && ')' == [result characterAtIndex:[result length] - 1]) {
+        result = [result substringWithRange:NSMakeRange(1, [result length] - 2)];
+    }
+    return result;
+}
+
 @end
 

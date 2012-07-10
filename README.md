@@ -13,3 +13,6 @@ This work is Copyright 2012 Lee Hounshell, and
 is licensed under a Creative Commons Attribution-NonCommercial 3.0 
 Unported License. See http://creativecommons.org/licenses/by-nc/3.0 for
 a license details.
+
+[image]: http://harlie.com/images/iOS-calculator.png "Stanford CS193P iOS-calculator"
+

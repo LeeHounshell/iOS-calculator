@@ -7,10 +7,11 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "NSString+Whitespace.h"
 
 @interface PostfixToInfix : NSObject
 
 // infix converter for CalculatorBrain programs
-+(NSArray *)convert:(NSArray *)theProgram;
++(NSArray *)convert:(NSArray *)program;
 
 @end

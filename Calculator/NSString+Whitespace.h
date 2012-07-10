@@ -13,5 +13,6 @@
 // Note: a category implementation does not have ivars in { }
 
 - (NSString *)stringByCompressingWhitespaceTo:(NSString *)seperator;
+- (NSString *)stripParensFromEnds;
 
 @end

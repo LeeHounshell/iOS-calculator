@@ -203,7 +203,6 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     do {
         programStack = [CalculatorBrain replaceVariablesInProgram:programStack usingValuesFrom:myVariableValues];
         variablesUsed = [CalculatorBrain variablesUsedInProgram:programStack];
-        
     } while ([variablesUsed count]);
     return [CalculatorBrain popOperandOffStack:programStack];
 }
@@ -274,13 +273,13 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
 
 + (NSString *)formatProgram:(NSArray *)theProgram
 {
-    NSCharacterSet *notAllowedChars = [NSCharacterSet characterSetWithCharactersInString:@"(),\n\t\""];
+    NSCharacterSet *notAllowedChars = [NSCharacterSet characterSetWithCharactersInString:@",\n\t\""];
     NSString *englishDescription = [NSString stringWithFormat:@"%@", [PostfixToInfix convert:theProgram]];
     englishDescription = [[englishDescription componentsSeparatedByCharactersInSet:notAllowedChars] componentsJoinedByString:@""];
     // replace the unicode string for PI with the π character
     englishDescription = [englishDescription stringByReplacingOccurrencesOfString:@"\\U03c0" withString:@"π"];
     englishDescription = [englishDescription stringByCompressingWhitespaceTo:@" "];
-    NSLog(@"englishDescription = %@", englishDescription);
+    NSLog(@"englishDescription=%@", englishDescription);
     return englishDescription;
 }
 
