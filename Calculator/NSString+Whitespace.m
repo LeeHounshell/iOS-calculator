@@ -13,9 +13,7 @@
 - (NSString *)stringByCompressingWhitespaceTo:(NSString *)seperator
 {
     NSArray *comps = [self componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    
     NSMutableArray *nonemptyComps = [[NSMutableArray alloc] init];
-    
     // only copy non-empty entries
     for (NSString *oneComp in comps)
     {
@@ -23,9 +21,7 @@
         {
             [nonemptyComps addObject:oneComp];
         }
-        
     }
-    
     return [nonemptyComps componentsJoinedByString:seperator];
 }
 

@@ -18,8 +18,8 @@
         NSLog(@"RPN=%@", program);
         NSMutableArray *theProgram = [[NSMutableArray alloc] initWithArray:program];
         NSMutableArray *evalStack = [[NSMutableArray alloc] init];
-        NSSet *possibleUnaryOperators = [[NSSet alloc] initWithObjects:@"sin", @"cos", @"sqrt", @"ln", @"%", nil];
-        NSSet *possibleBinaryOperators = [[NSSet alloc] initWithObjects:@"+", @"-", @"*", @"/", nil];
+        NSSet *possibleUnaryOperators = [[NSSet alloc] initWithObjects:@"││", @"¹/x", @"∿", @"〜", @"√", @"㏑", @"%", nil];
+        NSSet *possibleBinaryOperators = [[NSSet alloc] initWithObjects:@"+", @"-", @"*", @"/", @"yⁿ", nil];
         
         while ([theProgram count]) {
             id programElement = [PostfixToInfix popFirstElementOffProgram:theProgram];
@@ -30,15 +30,35 @@
                 NSString *element = (NSString *)programElement;
                 if ([possibleUnaryOperators containsObject:element]) {
                     NSString *singleArgument = [PostfixToInfix popLastElementOffStack:evalStack];
-                    [evalStack addObject:[NSString stringWithFormat:@"%@(%@)", element, [singleArgument stripParensFromEnds]]];
+                    if (! singleArgument) { // short stack
+                        singleArgument = @"?";
+                    }
+                    if ([@"││" isEqualToString:element]) { // absolute value
+                        [evalStack addObject:[NSString stringWithFormat:@"│%@│", [singleArgument stripParensFromEnds]]];
+                    }
+                    else if ([@"¹/x" isEqualToString:element]) { // inverse
+                        [evalStack addObject:[NSString stringWithFormat:@"1/(%@)", [singleArgument stripParensFromEnds]]];
+                    }
+                    else {
+                        [evalStack addObject:[NSString stringWithFormat:@"%@(%@)", element, [singleArgument stripParensFromEnds]]];
+                    }
                 }
                 else if ([possibleBinaryOperators containsObject:element]) {
                     NSString *secondArgument = [PostfixToInfix popLastElementOffStack:evalStack];
+                    if (! secondArgument) { // short stack
+                        secondArgument = @"?";
+                    }
                     NSString *firstArgument = [PostfixToInfix popLastElementOffStack:evalStack];
+                    if (! firstArgument) { // short stack
+                        firstArgument = @"?";
+                    }
                     [evalStack addObject:[NSString stringWithFormat:@"(%@%@%@)", firstArgument, element, secondArgument]];
                 }
                 else if ([@"+/-" isEqualToString:element]) {
                     NSString *argument = [PostfixToInfix popLastElementOffStack:evalStack];
+                    if (! argument) { // short stack
+                        argument = @"?";
+                    }
                     [evalStack addObject:[NSString stringWithFormat:@" -(%@) ", [argument stripParensFromEnds]]];
                 }
                 else {
@@ -59,14 +79,28 @@
             NSString *tmpResult = [evalStack objectAtIndex:i];
             if (i) {
                 if (i == 1) {
-                    result = [NSString stringWithFormat:@"(%@)", result];
+                    if (1 == [result length]) {
+                        result = [NSString stringWithFormat:@"%@", result];
+                    }
+                    else {
+                        result = [NSString stringWithFormat:@"(%@)", result];
+                    }
                 }
                 result = [result stringByAppendingString:@"?"];
-                result = [result stringByAppendingString:[NSString stringWithFormat:@"(%@)", [tmpResult stripParensFromEnds]]];
+                if (1 == [tmpResult length]) {
+                    result = [result stringByAppendingString:[NSString stringWithFormat:@"%@", [tmpResult stripParensFromEnds]]];
+                }
+                else {
+                    result = [result stringByAppendingString:[NSString stringWithFormat:@"(%@)", [tmpResult stripParensFromEnds]]];
+                }
             }
             else {
                 result = [result stringByAppendingString:[tmpResult stripParensFromEnds]];
             }
+        }
+        NSRange range = [result rangeOfString:@"null"];
+        if (range.length) {
+            result = @"ERROR";
         }
     }
     NSLog(@"INFIX result=%@", result);

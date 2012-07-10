@@ -19,9 +19,9 @@
 
 @implementation CalculatorViewController
 
+@synthesize history = _history;
 @synthesize display = _display;
-@synthesize keystrokes = _keystrokes;
-@synthesize variable = _variable;
+@synthesize variables = _variables;
 @synthesize brain = _brain;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize userPressedVariableSET = _userPressedVariableSET;
@@ -45,7 +45,7 @@
 - (void)viewDidUnload
 {
     [self setDisplay:nil];
-    [self setKeystrokes:nil];
+    [self setHistory:nil];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
 }
@@ -66,22 +66,42 @@
     }
 }
 
-- (void)updateVariableDisplay:(NSString *)variableKeypress
+- (void)updateVariablesAndHistoryUsingInfixWithEquals:(BOOL)showEquals withKeypress:(NSString *)variableKeypress
 {
+    NSString *resultString = [[CalculatorBrain descriptionOfProgram:[self.brain program]] copy];
+    if ([resultString isEqualToString:@"ERROR"]) {
+        [self disableAllButtonsExceptCLR_backspace];
+        resultString = @"";
+    }
+    else {
+        if (showEquals) {
+            resultString = [resultString stringByAppendingString:@" ="];
+        }
+    }
+    NSLog(@"HISTORY=%@", resultString);
+    self.history.text = [resultString copy];
+    // next update the variables..
     NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
     NSMutableSet *allVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
     if (variableKeypress) {
         [allVariablesUsed addObject:[NSString stringWithFormat:@"%@", variableKeypress]];
     }
+    NSString *separator = @",  ";
     NSString *varValues = @"";
     NSString *key;
     for (key in allVariablesUsed) {
         NSDictionary *subProgram = [[self.brain variables] objectForKey:key];
         if (subProgram) {
-            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"[%@=%@] ", key, [CalculatorBrain descriptionOfProgram:subProgram]]];
+            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"%@=%@%@", key, [CalculatorBrain descriptionOfProgram:subProgram], separator]];
         }
     }
-    self.variable.text = [NSString stringWithString:varValues];
+    if ([varValues hasSuffix:separator]) {
+        // strip trailing comma
+        varValues = [varValues substringToIndex:[varValues length] - [separator length]];
+    }
+    resultString = [NSString stringWithString:varValues];
+    NSLog(@"VARIABLES=%@", resultString);
+    self.variables.text = [resultString copy];
 }
 
 - (IBAction)digitPressed:(UIButton *)sender
@@ -92,7 +112,7 @@
     NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@%@", self.display.text, sender.currentTitle];
     [self updateDisplayWithText:newDisplay];
     self.userIsInTheMiddleOfEnteringANumber = YES;
-    [self updateKeystrokesWithEquals:NO];    
+    [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];    
 }
 
 - (IBAction)decimalPressed
@@ -106,7 +126,7 @@
         [self updateDisplayWithText:newDisplay];
         self.userIsInTheMiddleOfEnteringANumber = YES;
     }
-    [self updateKeystrokesWithEquals:NO];
+    [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
 }
 
 - (IBAction)changeSignPressed:(UIButton *)sender
@@ -121,10 +141,11 @@
             NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@", [self.display.text substringFromIndex:1]];
             [self updateDisplayWithText:newDisplay];
         }
-        [self updateKeystrokesWithEquals:NO];
+        [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
     }
     else {
         [self operationPressed:sender];
+        [self updateVariablesAndHistoryUsingInfixWithEquals:YES withKeypress:nil];
     }
 }
 
@@ -134,33 +155,50 @@
         [self enterPressed];
     }
     NSLog(@"operationPressed=%@", sender.currentTitle);
+    if ([@"yⁿ" isEqualToString:sender.currentTitle]) {
+        double lastCalculation = [CalculatorBrain lastDisplayResult];
+        self.display.text = [NSString stringWithFormat:@"%g", lastCalculation];
+    }
     double result = [self.brain performOperation:sender.currentTitle usingVariableValues:[self.brain variables]];
-    [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
+    if (NAN == result) {
+        [self disableAllButtonsExceptCLR_backspace];
+        return;
+    }
+    [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
     BOOL evaluate = YES;
     if ([@"π" isEqualToString:sender.currentTitle] || [@"e" isEqualToString:sender.currentTitle]) {
         evaluate = NO;
     }
-    [self updateKeystrokesWithEquals:evaluate];
+    [self updateVariablesAndHistoryUsingInfixWithEquals:evaluate withKeypress:nil];
 }
 
 - (IBAction)enterPressed
 {
     [self.brain pushOperand:[self.display.text doubleValue]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
-    [self updateKeystrokesWithEquals:NO];
+    [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
 }
 
 - (IBAction)backspacePressed
 {
-    if (self.display.text.length > 1) {
+    if (self.display.text.length > 1
+     && ! [@"ERROR" isEqualToString:self.display.text]) {
         NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@", [self.display.text substringToIndex:self.display.text.length - 1]];
         [self updateDisplayWithText:newDisplay];
     }
     else {
-        [self updateDisplayWithText:@"0"];
-        self.userIsInTheMiddleOfEnteringANumber = NO;
+        if (! self.userIsInTheMiddleOfEnteringANumber) {
+            double result = [self.brain performOperation:@"backspace" usingVariableValues:[self.brain variables]];
+            [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
+            [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
+        }
+        else {
+            [self updateDisplayWithText:@"0"];
+            self.userIsInTheMiddleOfEnteringANumber = NO;
+        }
     }
+    [self useDefaultButtonFunctionality];
 }
 
 - (IBAction)clearEntryPressed
@@ -168,9 +206,9 @@
     [self updateDisplayWithText:@"0"];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     if (self.userPressedVariableSET) {
-        [self useDefaultButtonFunctionality];
         self.userPressedVariableSET = NO;
     }
+    [self useDefaultButtonFunctionality];
     // dump content of CalculatorBrain for debug
     NSLog(@"------------------------------------");
     NSLog(@"VARIABLES=%@", [self.brain variables]);
@@ -183,8 +221,7 @@
     // NOTE: clear does not reset variable content
     [self clearEntryPressed];
     [self.brain performOperation:@"clear" usingVariableValues:nil];
-    [self updateKeystrokesWithEquals:NO];
-    [self updateVariableDisplay:nil];
+    [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
 }
 
 // helper method for recursive definition of variable
@@ -251,13 +288,14 @@
         NSMutableDictionary *testVariables = [[self.brain variables] mutableCopy];
         [testVariables removeObjectForKey:sender.currentTitle];
         [testVariables setValue:theProgram forKey:sender.currentTitle];
-        if ([self variableLoopsEquations:sender.currentTitle usingVariableValues:testVariables]) {
-            [self updateDisplayWithText:@"ERROR"];
-            [self useDefaultButtonFunctionality];
+        if (([self variableLoopsEquations:sender.currentTitle usingVariableValues:testVariables])
+         || (! [[self brain] setVariable:sender.currentTitle withValue:theProgram])) {
+            [self disableAllButtonsExceptCLR_backspace];
             return;
         }
-        // update the variable's content and change button color
-        [[self brain] setVariable:sender.currentTitle withValue:theProgram];
+        // push the variable just set onto the display stack for convenience now
+        [self variablePressed:sender];
+        // enable buttons and change used variables' button color
         [self useDefaultButtonFunctionality];
         [sender setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
         if (! recursionLevel) {
@@ -286,7 +324,7 @@
         }
     }
     // now update the variable label text
-    [self updateVariableDisplay:sender.currentTitle];
+    [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:sender.currentTitle];
 }
 
 - (IBAction)setVariablePressed
@@ -294,7 +332,9 @@
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
-    [self useRestrictedButtonFunctionality];
+    // disable all buttons except: CLR CE A B C X Y Z
+    NSSet *keepButtons = [[NSSet alloc] initWithObjects:@"CLR", @"CE", @"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+    [self useRestrictedButtonFunctionality:keepButtons];
     self.userPressedVariableSET = YES;
 }
 
@@ -310,10 +350,18 @@
     }
 }
 
-- (void)useRestrictedButtonFunctionality
+- (void)disableAllButtonsExceptCLR_backspace
 {
-    // disable all buttons except: CLR CE A B C X Y Z
-    NSSet *keepButtons = [[NSSet alloc] initWithObjects:@"CLR", @"CE", @"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+    self.history.text = @"";
+    [self useDefaultButtonFunctionality];
+    NSSet *keepButtons = [[NSSet alloc] initWithObjects:@"CLR", @"⇦", nil];
+    [self useRestrictedButtonFunctionality:keepButtons];
+    [self updateDisplayWithText:@"ERROR"];
+}
+
+- (void)useRestrictedButtonFunctionality:(NSSet *) keepButtons
+{
+    // disable specified buttons
     for (UIView *view in [[self view] subviews]) {
         if ([view isKindOfClass:[UIButton class]]) {
             UIButton *button = (UIButton *)view;
@@ -323,15 +371,6 @@
             }
         }
     }
-}
-
-- (void)updateKeystrokesWithEquals:(BOOL)showResult
-{
-    NSString *resultString = [CalculatorBrain descriptionOfProgram:[self.brain program]];
-    if (showResult) {
-        resultString = [resultString stringByAppendingString:@" ="];
-    }
-    self.keystrokes.text = resultString;
 }
 
 @end

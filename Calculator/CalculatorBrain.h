@@ -24,5 +24,6 @@
 
 + (NSString *)descriptionOfProgram:(id)program;
 + (NSSet *)variablesUsedInProgram:(id)program;
++ (double)lastDisplayResult;
 
 @end

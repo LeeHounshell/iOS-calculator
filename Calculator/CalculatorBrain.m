@@ -13,7 +13,7 @@
 @property (nonatomic, strong) NSMutableArray *programStack;
 @property (nonatomic, strong) NSMutableDictionary *variableValues;
 
-+ (double)lastDisplayResult;
+
 + (void)setLastDisplayResult:(double)value;
 + (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables;
 +(void)replaceOneVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value;
@@ -21,6 +21,8 @@
 + (NSString *)formatProgram:(NSArray *)theProgram;
 @end
 
+#define DEGREES(radians)(radians*180/M_PI)
+#define RADIANS(degree)(degree/M_PI*180)
 
 @implementation CalculatorBrain
 
@@ -51,8 +53,15 @@
     if (!value || ! [value count]) {
         value = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)0], nil];
     }
+    NSString *pendingAssignment = [CalculatorBrain formatProgram:self.program];
+    NSRange range = [pendingAssignment rangeOfString:@"?"];
+    if (range.length) {
+        pendingAssignment = @"ERROR";
+    }
+    if ([@"ERROR" isEqualToString:pendingAssignment]) {
+        return NO;
+    }
     [self.variableValues setValue:value forKey:variable];
-    [CalculatorBrain setLastDisplayResult:(double)0];
     return YES;
 }
 
@@ -70,7 +79,12 @@
         } // otherwise old variable settings are not cleared
         return (double)0;
     }
-    [self.programStack addObject:operation];
+    if ([@"backspace" isEqualToString:operation]) {
+        [self.programStack removeLastObject];
+    }
+    else {
+        [self.programStack addObject:operation];
+    }
     return [CalculatorBrain runProgram:self.program usingVariableValues:myVariables];
 }
 
@@ -116,9 +130,11 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     {
         [stack removeLastObject];
     }
-    else { // --- nothing on stack
-        result = [self lastDisplayResult];
-        NSLog(@"WARNING: empty stack! -- using last value: %g", result);
+    else { // --- nothing on the program stack! (but user pressed an operation or ENTER)
+        //result = NAN;
+        //NSLog(@"WARNING: empty stack! -- using NAN");
+        result = [CalculatorBrain lastDisplayResult];
+        NSLog(@"WARNING: empty stack! -- using %g", result);
     }
     if ([topOfStack isKindOfClass:[NSNumber class]])
     {
@@ -131,7 +147,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
         if ([@"π" isEqualToString:operation]) {
             result = M_PI;
         }
-        else if ([@"e" isEqualToString:operation]) {
+        else if ([@"ℯ" isEqualToString:operation]) {
             result = M_E;
         }
         // next process operations that take 1 argument
@@ -140,16 +156,30 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
             if ([@"+/-" isEqualToString:operation]) {
                 result = -topNumber;
             }
-            else if ([@"sin" isEqualToString:operation]) {
-                result = sin(topNumber);
+            else if ([@"││" isEqualToString:operation]) {
+                // absolute value
+                result = abs(topNumber);
             }
-            else if ([@"cos" isEqualToString:operation]) {
-                result = cos(topNumber);
+            else if ([@"¹/x" isEqualToString:operation]) {
+                // inverse
+                result = 1 / topNumber;
             }
-            else if ([@"sqrt" isEqualToString:operation]) {
+            else if ([@"∿" isEqualToString:operation]) {
+                // sin in degrees
+                double radians = sin(topNumber);
+                result = DEGREES(radians);
+            }
+            else if ([@"〜" isEqualToString:operation]) {
+                // cos in degrees
+                double radians = cos(topNumber);
+                result = DEGREES(radians);
+            }
+            else if ([@"√" isEqualToString:operation]) {
+                // square root
                 result = sqrt(topNumber);
             }
-            else if ([@"ln" isEqualToString:operation]) {
+            else if ([@"㏑" isEqualToString:operation]) {
+                // natural log
                 result = log(topNumber);
             }
             else if ([@"%" isEqualToString:operation]) {
@@ -180,6 +210,10 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
                         result = 0;
                     }
                 }
+                else if ([@"yⁿ" isEqualToString:operation]) {
+                    // power n
+                    result = pow(secondNumber, firstNumber);
+                }
                 else {
                     NSLog(@"ERROR: invalid operation=%@", operation);
                 }
@@ -187,7 +221,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
         }
     }
     NSLog(@"result=%g", result);
-    [CalculatorBrain setLastDisplayResult:result];
+    [CalculatorBrain setLastDisplayResult:(double)0];
     return result;
 }
 
