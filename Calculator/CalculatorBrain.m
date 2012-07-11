@@ -232,6 +232,10 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     
 + (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues
 {
+    if (! [program isKindOfClass:[NSArray class]]) {
+        NSLog(@"ERROR: invalid program: %@", program);
+        return (double)0;
+    }
     NSMutableArray *programStack = [program mutableCopy];
     NSSet *variablesUsed = nil;
     do {
@@ -302,7 +306,10 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
 
 + (NSString *)descriptionOfProgram:(id)program
 {
-    return [CalculatorBrain formatProgram:program];
+    if ([program isKindOfClass:[NSArray class]]) {
+        return [CalculatorBrain formatProgram:program];
+    }
+    return @"";
 }
 
 + (NSString *)formatProgram:(NSArray *)theProgram

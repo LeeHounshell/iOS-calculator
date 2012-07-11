@@ -183,8 +183,15 @@
 - (IBAction)backspacePressed
 {
     if (self.display.text.length > 1
-     && ! [@"ERROR" isEqualToString:self.display.text]) {
+     && ! [@"ERROR" isEqualToString:self.display.text]
+     && ! [@"nan" isEqualToString:self.display.text]
+     && ! [@"inf" isEqualToString:self.display.text]
+     && ! [@"-inf" isEqualToString:self.display.text]
+    ) {
         NSString *newDisplay = [[NSString alloc] initWithFormat:@"%@", [self.display.text substringToIndex:self.display.text.length - 1]];
+        if ([@"-" isEqualToString:newDisplay]) {
+            newDisplay = @"0";
+        }
         [self updateDisplayWithText:newDisplay];
     }
     else {
