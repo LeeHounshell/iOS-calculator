@@ -32,7 +32,6 @@
 - (void)setGraphView:(GraphView *)graphView
 {
     _graphView = graphView;
-    NSLog(@"adding pinch and pan gesture recognizers");
     [self.graphView addGestureRecognizer:[[UIPinchGestureRecognizer alloc]
         initWithTarget:self.graphView action:@selector(pinchHandler:)]];
     [self.graphView addGestureRecognizer:[[UIPanGestureRecognizer alloc]
