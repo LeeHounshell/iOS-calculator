@@ -14,8 +14,8 @@
 {
     NSString *result = @"";
     if ([program count]) {
-        NSLog(@"---------INFIX CONVERSION---------");
-        NSLog(@"RPN=%@", program);
+        //NSLog(@"---------INFIX CONVERSION---------");
+        //NSLog(@"RPN=%@", program);
         NSMutableArray *theProgram = [[NSMutableArray alloc] initWithArray:program];
         NSMutableArray *evalStack = [[NSMutableArray alloc] init];
         NSSet *possibleUnaryOperators = [[NSSet alloc] initWithObjects:@"││", @"¹/x", @"sin", @"cos", @"tan", @"√", @"㏑", @"%", nil];
@@ -106,7 +106,7 @@
             result = @"ERROR";
         }
     }
-    NSLog(@"INFIX result=%@", result);
+    //NSLog(@"INFIX result=%@", result);
     return result;
 }
 

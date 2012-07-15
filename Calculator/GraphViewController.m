@@ -25,6 +25,7 @@
 
 - (void)setBrain:(CalculatorBrain *)brain
 {
+    NSLog(@"GraphViewController setBrain");
     _brain = brain;
     [self.graphView setNeedsDisplay]; // draw the graph every time brain is set
 }
@@ -62,7 +63,7 @@
 
 - (void)viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
-    self.navigationItem.title = @"Equation Graph";
+    self.navigationItem.title = [NSString stringWithFormat:@"Y=%@", [self.brain description]];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -76,7 +77,13 @@
 
 - (double)calculateYResultForXValue:(CGFloat)x requestor:(GraphView *)graphView
 {
-    double result = [CalculatorBrain runProgram:[self.brain program] usingVariableValues:[self.brain variables]];
+    NSArray *programX = [[[self.brain variables] objectForKey:@"X"] copy];
+    NSArray *valueX = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)x], nil];
+    [self.brain setVariable:@"X" withValue:valueX]; // we temporarially replace X with the plot value
+    NSArray *myProgram = [self.brain program];
+    NSDictionary *myVariables = [self.brain variables];
+    double result = [CalculatorBrain runProgram:myProgram usingVariableValues:myVariables];
+    [self.brain setVariable:@"X" withValue:programX]; // put back the original X program
     NSLog(@"For x=%g calculateYResultForXValue=%g", x, result);
     return result;
 }

@@ -16,7 +16,7 @@
 @synthesize scale = _scale;
 
 
-#define DEFAULT_SIZE 10
+#define DEFAULT_SIZE 50
 
 - (void)setup
 {
@@ -91,15 +91,32 @@
     midPoint.y = self.bounds.origin.y + self.bounds.size.height/2 + self.origin.y;
     
     CGFloat size = self.bounds.size.width / 2;
-    if (self.bounds.size.height < self.bounds.size.width) size = self.bounds.size.height / 2;
+    if (self.bounds.size.height < self.bounds.size.width) {
+        size = self.bounds.size.height / 2;
+    }
     size *= self.scale; // scale is percentage of full view size
     
-    CGContextSetLineWidth(context, 5.0);
-    [[UIColor blueColor] setStroke];
+    CGContextSetLineWidth(context, 1.0);
+    [[UIColor blackColor] setStroke];
     
     [AxesDrawer drawAxesInRect:self.bounds originAtPoint:midPoint scale:self.scale*self.contentScaleFactor];
 
-    // FIXME: loop through all X and invoke delegate calculateYResultForXValue to determine Y.  plot values.
+    [[UIColor blueColor] setStroke];
+    // loop through all X and invoke delegate calculateYResultForXValue to determine Y.  plot values.
+    for (CGFloat x = 0; x <= self.bounds.size.width; x++) {
+		CGPoint thePoint;
+		thePoint.x = x;
+		CGPoint graphPoint;
+		graphPoint.x = (thePoint.x - midPoint.x)/(self.scale * self.contentScaleFactor);
+		graphPoint.y = ([self.delegate calculateYResultForXValue:graphPoint.x requestor:self]);
+		thePoint.y = midPoint.y - (graphPoint.y * self.scale * self.contentScaleFactor);
+		if (x == 0) {
+			CGContextMoveToPoint(context, thePoint.x, thePoint.y);
+		}
+        else {
+			CGContextAddLineToPoint(context, thePoint.x, thePoint.y);
+		}
+	}
     
     CGContextStrokePath(context);
 }

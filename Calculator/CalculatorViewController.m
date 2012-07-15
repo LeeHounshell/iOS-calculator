@@ -90,7 +90,7 @@
             resultString = [resultString stringByAppendingString:@" ="];
         }
     }
-    NSLog(@"HISTORY=%@", resultString);
+    //NSLog(@"HISTORY=%@", resultString);
     self.history.text = [resultString copy];
     NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
     NSMutableSet *programVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
@@ -118,7 +118,7 @@
         varValues = [varValues substringToIndex:[varValues length] - [separator length]];
     }
     resultString = [NSString stringWithString:varValues];
-    NSLog(@"VARIABLES=%@", resultString);
+    //NSLog(@"VARIABLES=%@", resultString);
     self.variables.text = [resultString copy];
 }
 

@@ -54,9 +54,10 @@
 
 - (id)copyWithZone:(NSZone *) zone
 {
-    CalculatorBrain *copy = [[[self class] allocWithZone:zone] init];
-    [copy setProgramStack:[self program]];
-    [copy setVariableValues:[self variables]];
+    NSLog(@"CalculatorBrain copyWithZone");
+    CalculatorBrain *copy = [[CalculatorBrain alloc] init];
+    copy.programStack = [[NSMutableArray alloc] initWithArray:[self program] copyItems:YES];
+    copy.variableValues = [[NSMutableDictionary alloc] initWithDictionary:[self variables] copyItems:YES];
     return copy;
 }
 
@@ -231,7 +232,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
             }
         }
     }
-    NSLog(@"result=%g", result);
+    //NSLog(@"result=%g", result);
     [CalculatorBrain setLastDisplayResult:(double)0];
     return result;
 }
@@ -262,7 +263,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     if (! myVariables || ! [myVariables count] || ! [variablesUsed count]
         || ! [program isKindOfClass:[NSArray class]]
         || ! [myVariables isKindOfClass:[NSDictionary class]]) {
-        NSLog(@"nothing to replace.");
+        //NSLog(@"nothing to replace.");
         return program; // unchanged
     }
     NSMutableArray *newProgram = [[NSMutableArray alloc] initWithArray:program];
@@ -277,7 +278,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
             }
         }
     }
-    NSLog(@"newProgram=%@", newProgram);
+    //NSLog(@"newProgram=%@", newProgram);
     return newProgram;
 }
 
@@ -331,7 +332,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     // replace the unicode string for PI with the π character
     englishDescription = [englishDescription stringByReplacingOccurrencesOfString:@"\\U03c0" withString:@"π"];
     englishDescription = [englishDescription stringByCompressingWhitespaceTo:@" "];
-    NSLog(@"englishDescription=%@", englishDescription);
+    //NSLog(@"englishDescription=%@", englishDescription);
     return englishDescription;
 }
 
