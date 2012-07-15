@@ -10,9 +10,39 @@
 
 @implementation GraphView
 
+@synthesize delegate = _delegate;
+@synthesize origin = _origin;
 @synthesize scale = _scale;
 
+
 #define DEFAULT_SIZE 0.90
+
+- (void)setup
+{
+    self.contentMode = UIViewContentModeRedraw;
+    self.origin = CGPointMake(0, 0);
+    self.scale = DEFAULT_SIZE;
+}
+
+- (void)awakeFromNib // storyboard initialization
+{
+    [self setup];
+}
+
+- (id)initWithFrame:(CGRect)frame // not called from storyboard
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setup];
+    }
+    return self;
+}
+
+- (void)setOrigin:(CGPoint)origin
+{
+    _origin = origin;
+    [self setNeedsDisplay];
+}
 
 - (CGFloat)scale
 {
@@ -30,6 +60,7 @@
 
 - (void)pinchHandler:(UIPinchGestureRecognizer *)gesture
 {
+    NSLog(@"pinchHandler gesture=%@", gesture);
     if ((gesture.state == UIGestureRecognizerStateChanged)
      || (gesture.state == UIGestureRecognizerStateEnded))
     {
@@ -38,23 +69,16 @@
     }
 }
 
-- (void)setup
+- (void)panHandler:(UIPanGestureRecognizer *)gesture
 {
-    self.contentMode = UIViewContentModeRedraw;
-}
-
-- (void)awakeFromNib // storyboard initialization
-{
-    [self setup];
-}
-
-- (id)initWithFrame:(CGRect)frame // not called from storyboard
-{
-    self = [super initWithFrame:frame];
-    if (self) {
-        [self setup];
+    if ((gesture.state == UIGestureRecognizerStateChanged)
+        || (gesture.state == UIGestureRecognizerStateEnded))
+    {
+        CGPoint translate = [gesture translationInView:self];
+        NSLog(@"panHandler translate.x=%g translate.y=%g", translate.x, translate.y);
+		self.origin = CGPointMake(self.origin.x + translate.x, self.origin.y + translate.y);
+		[gesture setTranslation:CGPointZero inView:self];
     }
-    return self;
 }
 
 
@@ -67,8 +91,8 @@
     // graph (X, Y)
     
     CGPoint midPoint; // center of our bounds in our coordinate system
-    midPoint.x = self.bounds.origin.x + self.bounds.size.width/2;
-    midPoint.y = self.bounds.origin.y + self.bounds.size.height/2;
+    midPoint.x = self.bounds.origin.x + self.bounds.size.width/2 + self.origin.x;
+    midPoint.y = self.bounds.origin.y + self.bounds.size.height/2 + self.origin.y;
     
     CGFloat size = self.bounds.size.width / 2;
     if (self.bounds.size.height < self.bounds.size.width) size = self.bounds.size.height / 2;

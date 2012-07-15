@@ -8,10 +8,18 @@
 
 #import <UIKit/UIKit.h>
 
+@class GraphView;
+
+@protocol GraphViewDelegate 
+- (double)calculateYResultForXValue:(CGFloat)x requestor:(GraphView *)graphView;
+@end
+
 @interface GraphView : UIView
 
 - (void)pinchHandler:(UIPinchGestureRecognizer *)gesture;
 
+@property (nonatomic, weak) id <GraphViewDelegate> delegate;
+@property (nonatomic) CGPoint origin;
 @property (nonatomic) CGFloat scale;
 
 @end

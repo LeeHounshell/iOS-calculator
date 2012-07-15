@@ -52,6 +52,14 @@
     return _variableValues;
 }
 
+- (id)copyWithZone:(NSZone *) zone
+{
+    CalculatorBrain *copy = [[[self class] allocWithZone:zone] init];
+    [copy setProgramStack:[self program]];
+    [copy setVariableValues:[self variables]];
+    return copy;
+}
+
 - (BOOL)setVariable:(NSString *)variable withValue:(NSArray *)value
 {
     if (!value || ! [value count]) {

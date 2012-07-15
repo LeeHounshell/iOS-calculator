@@ -32,7 +32,12 @@
 - (void)setGraphView:(GraphView *)graphView
 {
     _graphView = graphView;
-    [self.graphView addGestureRecognizer:[[UIPinchGestureRecognizer alloc] initWithTarget:self.graphView action:@selector(pinchHandler:)]];
+    NSLog(@"adding pinch and pan gesture recognizers");
+    [self.graphView addGestureRecognizer:[[UIPinchGestureRecognizer alloc]
+        initWithTarget:self.graphView action:@selector(pinchHandler:)]];
+    [self.graphView addGestureRecognizer:[[UIPanGestureRecognizer alloc]
+        initWithTarget:self.graphView action:@selector(panHandler:)]];
+    self.graphView.delegate = self;
 }
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -68,6 +73,13 @@
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
+- (double)calculateYResultForXValue:(CGFloat)x requestor:(GraphView *)graphView
+{
+    double result = [CalculatorBrain runProgram:[self.brain program] usingVariableValues:[self.brain variables]];
+    NSLog(@"For x=%g calculateYResultForXValue=%g", x, result);
+    return result;
 }
 
 @end

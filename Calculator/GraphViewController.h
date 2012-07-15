@@ -7,10 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "GraphView.h"
 #import "CalculatorBrain.h"
 
-@interface GraphViewController : UIViewController
+@interface GraphViewController : UIViewController <GraphViewDelegate>
 
-@property (nonatomic, weak) CalculatorBrain *brain; // FIXME: change to protocol
+@property (nonatomic, strong) CalculatorBrain *brain;
 
 @end

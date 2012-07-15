@@ -443,7 +443,7 @@
                                     <action selector="operationPressed:" destination="2" eventType="touchUpInside" id="QIR-h9-NpG"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" minimumFontSize="10" id="k3d-jS-C71">
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="" lineBreakMode="headTruncation" baselineAdjustment="alignBaselines" minimumFontSize="10" id="k3d-jS-C71">
                                 <rect key="frame" x="20" y="20" width="279" height="33"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
@@ -555,7 +555,7 @@
                                     <action selector="setVariablePressed" destination="2" eventType="touchUpInside" id="SiX-Bl-Y2f"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="" lineBreakMode="characterWrap" baselineAdjustment="alignBaselines" minimumFontSize="9" id="44S-aJ-mSv">
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="" lineBreakMode="characterWrap" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="7" id="44S-aJ-mSv">
                                 <rect key="frame" x="20" y="84" width="279" height="46"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>

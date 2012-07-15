@@ -383,7 +383,7 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
     if ([segue.identifier isEqualToString:@"ShowGraphView"]) {
-        [segue.destinationViewController setBrain:self.brain];
+        [segue.destinationViewController setBrain:[self.brain copy]];
     }
 }
 

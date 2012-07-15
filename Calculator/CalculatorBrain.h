@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "NSString+Whitespace.h"
 
-@interface CalculatorBrain : NSObject
+@interface CalculatorBrain : NSObject <NSCopying>
 
 - (void)pushOperand:(double)operand;
 - (BOOL)setVariable:(NSString *)variable withValue:(NSArray *)value;

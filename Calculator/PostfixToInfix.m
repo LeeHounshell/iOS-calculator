@@ -39,6 +39,9 @@
                     else if ([@"¹/x" isEqualToString:element]) { // inverse
                         [evalStack addObject:[NSString stringWithFormat:@"1/(%@)", [singleArgument stripParensFromEnds]]];
                     }
+                    else if ([@"%" isEqualToString:element]) { // percent
+                        [evalStack addObject:[NSString stringWithFormat:@"(%@)%@", [singleArgument stripParensFromEnds], @"%"]];
+                    }
                     else {
                         [evalStack addObject:[NSString stringWithFormat:@"%@(%@)", element, [singleArgument stripParensFromEnds]]];
                     }
