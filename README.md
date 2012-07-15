@@ -5,9 +5,11 @@ I'm participating in "CODING TOGETHER: Apps for iPhone & iPad" on
 piazza.com this summer.
 
 This is a RPN style programmable Calculator.
-The Calculator posted here is functionally extended from assignment 2 with variable equation support.
-Each of the variable buttons may hold an equation (that can reference other equation variables).
-This lets you do complex variable substitutions for up to 6 equations.
+The calculator posted here is functionally extended from CS193P assignment 3.  This calculator
+supports variable equations and equation graphing (for equations defined using the 'X' variable).
+Each variable button may hold an equation (that can reference other equation variables).
+This lets you do complex variable substitutions with up to 6 equations.  Note that for graphs
+using 'X' in the main equation, any defined program stored in 'X' is not used in graph generation.
 
 ![RPN iOS-calculator](http://harlie.com/images/iOS-calculator.jpg)
 
