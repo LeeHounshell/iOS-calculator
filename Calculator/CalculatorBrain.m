@@ -21,8 +21,6 @@
 + (NSString *)formatProgram:(NSArray *)theProgram;
 @end
 
-#define DEGREES(radians)(radians*180/M_PI)
-#define RADIANS(degree)(degree/M_PI*180)
 
 @implementation CalculatorBrain
 
@@ -44,6 +42,12 @@
     if (_variableValues == nil)
     {
         _variableValues = [[NSMutableDictionary alloc] init];
+        NSSet *possibleVariables = [[NSSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+        NSArray *zero = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)0], nil];
+        NSString *key;
+        for (key in possibleVariables) {
+            [self setVariable:key withValue:zero]; // initialize all variables to zero
+        }
     }
     return _variableValues;
 }
@@ -164,15 +168,14 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
                 // inverse
                 result = 1 / topNumber;
             }
-            else if ([@"∿" isEqualToString:operation]) {
-                // sin in degrees
-                double radians = sin(topNumber);
-                result = DEGREES(radians);
+            else if ([@"sin" isEqualToString:operation]) {
+                result = sin(topNumber);
             }
-            else if ([@"〜" isEqualToString:operation]) {
-                // cos in degrees
-                double radians = cos(topNumber);
-                result = DEGREES(radians);
+            else if ([@"cos" isEqualToString:operation]) {
+                result = cos(topNumber);
+            }
+            else if ([@"tan" isEqualToString:operation]) {
+                result = tan(topNumber);
             }
             else if ([@"√" isEqualToString:operation]) {
                 // square root

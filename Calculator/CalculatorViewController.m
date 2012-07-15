@@ -50,6 +50,18 @@
     // Release any retained subviews of the main view.
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+	[super viewWillAppear:animated];
+    // we don't want to see the navigation bar for the main screen
+	[self.navigationController setNavigationBarHidden:YES animated:YES];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+	[super viewWillDisappear:animated];
+    // but we do want to see the navigation bar in sub views
+	[self.navigationController setNavigationBarHidden:NO animated:YES];
+}
+
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
@@ -80,19 +92,25 @@
     }
     NSLog(@"HISTORY=%@", resultString);
     self.history.text = [resultString copy];
-    // next update the variables..
     NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
-    NSMutableSet *allVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
+    NSMutableSet *programVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
     if (variableKeypress) {
-        [allVariablesUsed addObject:[NSString stringWithFormat:@"%@", variableKeypress]];
+        [programVariablesUsed addObject:[NSString stringWithFormat:@"%@", variableKeypress]];
     }
+    // next update the variables.. show all defined variables
+    NSOrderedSet *allVariables = [[NSOrderedSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
     NSString *separator = @",  ";
     NSString *varValues = @"";
     NSString *key;
-    for (key in allVariablesUsed) {
+    for (key in allVariables) {
         NSDictionary *subProgram = [[self.brain variables] objectForKey:key];
         if (subProgram) {
-            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"%@=%@%@", key, [CalculatorBrain descriptionOfProgram:subProgram], separator]];
+            NSString *subValue = [CalculatorBrain descriptionOfProgram:subProgram];
+            if ((! [@"0" isEqualToString:subValue]) || ([programVariablesUsed containsObject:key]))
+            {
+                // show variables that are used or are non-zero (but don't show unused with value zero)
+                varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"%@=%@%@", key, subValue, separator]];
+            }
         }
     }
     if ([varValues hasSuffix:separator]) {
@@ -275,7 +293,11 @@
             }
         }
     }
-    return [allVariablesUsed containsObject:operation];
+    BOOL loops = [allVariablesUsed containsObject:operation];
+    if (loops) {
+        NSLog(@"WARNING: loop found for operation %@ in %@", operation, myVariableValues);
+    }
+    return loops;
 }
 
 - (IBAction)variablePressed:(UIButton *)sender
@@ -304,18 +326,14 @@
         [self variablePressed:sender];
         // enable buttons and change used variables' button color
         [self useDefaultButtonFunctionality];
-        [sender setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
         if (! recursionLevel) {
             [self clearPressed];
         }
-        else {
-            // we used a variable without first doing a SET
-            // it will be set to whatever is shown in the display
-            [self operationPressed:sender];
-            return;
-        }
     }
     else {
+        if (self.userIsInTheMiddleOfEnteringANumber) {
+            [self enterPressed];
+        }
         //----------------------------------------
         // here a variable is being used as an operand
         NSArray *variableValue = [[self.brain variables] objectForKey:sender.currentTitle];
@@ -354,6 +372,18 @@
             [button setEnabled:YES];
             [button setAlpha:1.0];
         }
+    }
+}
+
+- (IBAction)graphXY
+{
+    [self performSegueWithIdentifier:@"ShowGraphView" sender:self];
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([segue.identifier isEqualToString:@"ShowGraphView"]) {
+        [segue.destinationViewController setBrain:self.brain];
     }
 }
 

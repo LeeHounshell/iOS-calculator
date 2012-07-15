@@ -18,7 +18,7 @@
         NSLog(@"RPN=%@", program);
         NSMutableArray *theProgram = [[NSMutableArray alloc] initWithArray:program];
         NSMutableArray *evalStack = [[NSMutableArray alloc] init];
-        NSSet *possibleUnaryOperators = [[NSSet alloc] initWithObjects:@"││", @"¹/x", @"∿", @"〜", @"√", @"㏑", @"%", nil];
+        NSSet *possibleUnaryOperators = [[NSSet alloc] initWithObjects:@"││", @"¹/x", @"sin", @"cos", @"tan", @"√", @"㏑", @"%", nil];
         NSSet *possibleBinaryOperators = [[NSSet alloc] initWithObjects:@"+", @"-", @"*", @"/", @"yⁿ", nil];
         
         while ([theProgram count]) {

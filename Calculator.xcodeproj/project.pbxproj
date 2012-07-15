@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		9B097DF315A196D100C73B83 /* NSString+Whitespace.m in Sources */ = {isa = PBXBuildFile; fileRef = 9B097DF215A196D100C73B83 /* NSString+Whitespace.m */; };
+		9B1946D115B234AA007CE513 /* GraphViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9B1946D015B234AA007CE513 /* GraphViewController.m */; };
+		9B1946D515B23DB7007CE513 /* GraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9B1946D415B23DB7007CE513 /* GraphView.m */; };
 		9B23F93315A957DF00AD77F7 /* PostfixToInfix.m in Sources */ = {isa = PBXBuildFile; fileRef = 9B23F93215A957DF00AD77F7 /* PostfixToInfix.m */; };
 		9BBEF9BF1575633C00DAF105 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BBEF9BE1575633C00DAF105 /* UIKit.framework */; };
 		9BBEF9C11575633C00DAF105 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BBEF9C01575633C00DAF105 /* Foundation.framework */; };
@@ -23,6 +25,10 @@
 /* Begin PBXFileReference section */
 		9B097DF115A196D100C73B83 /* NSString+Whitespace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Whitespace.h"; sourceTree = "<group>"; };
 		9B097DF215A196D100C73B83 /* NSString+Whitespace.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Whitespace.m"; sourceTree = "<group>"; };
+		9B1946CF15B234AA007CE513 /* GraphViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GraphViewController.h; sourceTree = "<group>"; };
+		9B1946D015B234AA007CE513 /* GraphViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GraphViewController.m; sourceTree = "<group>"; };
+		9B1946D315B23DB6007CE513 /* GraphView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GraphView.h; sourceTree = "<group>"; };
+		9B1946D415B23DB7007CE513 /* GraphView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GraphView.m; sourceTree = "<group>"; };
 		9B23F93115A957DF00AD77F7 /* PostfixToInfix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PostfixToInfix.h; sourceTree = "<group>"; };
 		9B23F93215A957DF00AD77F7 /* PostfixToInfix.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PostfixToInfix.m; sourceTree = "<group>"; };
 		9BBEF9BA1575633C00DAF105 /* Calculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Calculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -98,6 +104,10 @@
 				9B097DF215A196D100C73B83 /* NSString+Whitespace.m */,
 				9B23F93115A957DF00AD77F7 /* PostfixToInfix.h */,
 				9B23F93215A957DF00AD77F7 /* PostfixToInfix.m */,
+				9B1946CF15B234AA007CE513 /* GraphViewController.h */,
+				9B1946D015B234AA007CE513 /* GraphViewController.m */,
+				9B1946D315B23DB6007CE513 /* GraphView.h */,
+				9B1946D415B23DB7007CE513 /* GraphView.m */,
 			);
 			path = Calculator;
 			sourceTree = "<group>";
@@ -182,6 +192,8 @@
 				9BBEF9DD15756BAF00DAF105 /* CalculatorBrain.m in Sources */,
 				9B097DF315A196D100C73B83 /* NSString+Whitespace.m in Sources */,
 				9B23F93315A957DF00AD77F7 /* PostfixToInfix.m in Sources */,
+				9B1946D115B234AA007CE513 /* GraphViewController.m in Sources */,
+				9B1946D515B23DB7007CE513 /* GraphView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
