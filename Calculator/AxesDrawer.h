@@ -1,12 +1,13 @@
 //
 //  AxesDrawer.h
+//  Calculator
 //
+//  Created by CS193p Instructor.
 //  Created for Stanford University CS193P Summer 2012.
+//  Copyright (c) 2011 Stanford University. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
-
-// AxesDrawer is a simple axis-drawing helper class.
+#import <UIKit/UIKit.h>
 
 @interface AxesDrawer : NSObject
 
@@ -22,6 +23,8 @@
 //
 // Does not set any graphics state, so set the colors, linewidths, etc., you want before calling.
 
-+ (void)drawAxesInRect:(CGRect)bounds originAtPoint:(CGPoint)axisOrigin scale:(CGFloat)pointsPerUnit;
++ (void)drawAxesInRect:(CGRect)bounds
+         originAtPoint:(CGPoint)axisOrigin
+                 scale:(CGFloat)pointsPerUnit;
 
 @end
