@@ -113,6 +113,7 @@
 
     [[UIColor blueColor] setStroke];
     // loop through all X and invoke delegate calculateYResultForXValue to determine Y.  plot values.
+    BOOL didInitialPoint = NO;
     for (CGFloat x = 0; x <= self.bounds.size.width; x++) {
 		CGPoint thePoint;
 		thePoint.x = x;
@@ -126,12 +127,16 @@
         // if we try and draw outside the bounds, the app can crash
         if (xPoint < (self.bounds.origin.x + self.bounds.size.width) && xPoint > 0 &&
             yPoint < (self.bounds.origin.y + self.bounds.size.height) && yPoint > 0) {
-            if (x == 0) {
+            if (! didInitialPoint || x == 0) {
                 CGContextMoveToPoint(context, xPoint, yPoint);
+                didInitialPoint = YES;
             }
             else {
                 CGContextAddLineToPoint(context, xPoint, yPoint);
             }
+        }
+        else {
+            NSLog(@"discard point: x=%g, y=%g", xPoint, yPoint);
         }
 	}
     
