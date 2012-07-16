@@ -16,7 +16,7 @@
 @synthesize scale = _scale;
 
 
-#define DEFAULT_SIZE 50
+#define DEFAULT_SIZE 26
 
 - (void)setup
 {
@@ -80,6 +80,16 @@
     }
 }
 
+- (void)tapHandler:(UIGestureRecognizer *)gesture
+{
+    if ((gesture.state == UIGestureRecognizerStateChanged)
+        || (gesture.state == UIGestureRecognizerStateEnded))
+    {
+        self.origin = CGPointMake(0, 0);
+        self.scale = DEFAULT_SIZE;
+    }
+}
+
 // Only override drawRect: if you perform custom drawing.
 // An empty implementation adversely affects performance during animation.
 - (void)drawRect:(CGRect)rect
@@ -109,13 +119,20 @@
 		CGPoint graphPoint;
 		graphPoint.x = (thePoint.x - midPoint.x)/(self.scale * self.contentScaleFactor);
 		graphPoint.y = ([self.delegate calculateYResultForXValue:graphPoint.x requestor:self]);
+        NSLog(@"graphpoint.x=%g graphpoint.y=%g", graphPoint.x, graphPoint.y);
 		thePoint.y = midPoint.y - (graphPoint.y * self.scale * self.contentScaleFactor);
-		if (x == 0) {
-			CGContextMoveToPoint(context, thePoint.x, thePoint.y);
-		}
-        else {
-			CGContextAddLineToPoint(context, thePoint.x, thePoint.y);
-		}
+        double xPoint = thePoint.x;
+        double yPoint = thePoint.y;
+        // if we try and draw outside the bounds, the app can crash
+        if (xPoint < (self.bounds.origin.x + self.bounds.size.width) && xPoint > 0 &&
+            yPoint < (self.bounds.origin.y + self.bounds.size.height) && yPoint > 0) {
+            if (x == 0) {
+                CGContextMoveToPoint(context, xPoint, yPoint);
+            }
+            else {
+                CGContextAddLineToPoint(context, xPoint, yPoint);
+            }
+        }
 	}
     
     CGContextStrokePath(context);
