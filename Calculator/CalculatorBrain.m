@@ -284,7 +284,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
 
 +(void)replaceOneVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value
 {
-    NSLog(@"calculated replacement subValue=%g for key=%@ in newProgram=%@", value, operator,newProgram);
+    //NSLog(@"calculated replacement subValue=%g for key=%@ in newProgram=%@", value, operator,newProgram);
     while (YES) {
         int index = [newProgram indexOfObject:operator];
         if (NSNotFound == index) {

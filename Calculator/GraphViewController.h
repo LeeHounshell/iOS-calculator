@@ -10,7 +10,11 @@
 #import "GraphView.h"
 #import "CalculatorBrain.h"
 
-@interface GraphViewController : UIViewController <GraphViewDelegate>
+@protocol SplitViewBarButtonItemPresenter <NSObject>
+@property (nonatomic, strong) UIBarButtonItem *splitViewBarButtonItem;
+@end
+
+@interface GraphViewController : UIViewController <GraphViewDelegate, SplitViewBarButtonItemPresenter>
 
 @property (nonatomic, strong) CalculatorBrain *brain;
 

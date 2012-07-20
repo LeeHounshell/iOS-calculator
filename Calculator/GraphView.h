@@ -10,7 +10,8 @@
 
 @class GraphView;
 
-@protocol GraphViewDelegate 
+@protocol GraphViewDelegate
+- (BOOL)isValidProgram;
 - (double)calculateYResultForXValue:(CGFloat)x requestor:(GraphView *)graphView;
 @end
 

@@ -75,8 +75,8 @@
         || (gesture.state == UIGestureRecognizerStateEnded))
     {
         CGPoint translate = [gesture translationInView:self];
-		self.origin = CGPointMake(self.origin.x + translate.x, self.origin.y + translate.y);
-		[gesture setTranslation:CGPointZero inView:self];
+        self.origin = CGPointMake(self.origin.x + translate.x, self.origin.y + translate.y);
+        [gesture setTranslation:CGPointZero inView:self];
     }
 }
 
@@ -94,6 +94,7 @@
 // An empty implementation adversely affects performance during animation.
 - (void)drawRect:(CGRect)rect
 {
+    NSLog(@"GraphView drawRect");
     CGContextRef context = UIGraphicsGetCurrentContext();
     
     CGPoint midPoint; // center of our bounds in our coordinate system
@@ -110,24 +111,29 @@
     [[UIColor blackColor] setStroke];
     
     [AxesDrawer drawAxesInRect:self.bounds originAtPoint:midPoint scale:self.scale*self.contentScaleFactor];
+    
+    if (! [self.delegate isValidProgram]) {
+        NSLog(@"GraphView: nothing to graph except the axes");
+        return;
+    }
 
     [[UIColor blueColor] setStroke];
     // loop through all X and invoke delegate calculateYResultForXValue to determine Y.  plot values.
     BOOL didInitialPoint = NO;
     for (CGFloat x = 0; x <= self.bounds.size.width; x++) {
-		CGPoint thePoint;
-		thePoint.x = x;
-		CGPoint graphPoint;
-		graphPoint.x = (thePoint.x - midPoint.x)/(self.scale * self.contentScaleFactor);
-		graphPoint.y = ([self.delegate calculateYResultForXValue:graphPoint.x requestor:self]);
-        NSLog(@"graphpoint.x=%g graphpoint.y=%g", graphPoint.x, graphPoint.y);
-		thePoint.y = midPoint.y - (graphPoint.y * self.scale * self.contentScaleFactor);
+        CGPoint thePoint;
+        thePoint.x = x;
+        CGPoint graphPoint;
+        graphPoint.x = (thePoint.x - midPoint.x)/(self.scale * self.contentScaleFactor);
+        graphPoint.y = ([self.delegate calculateYResultForXValue:graphPoint.x requestor:self]);
+        //NSLog(@"graphpoint.x=%g graphpoint.y=%g", graphPoint.x, graphPoint.y);
+        thePoint.y = midPoint.y - (graphPoint.y * self.scale * self.contentScaleFactor);
         double xPoint = thePoint.x;
         double yPoint = thePoint.y;
         // if we try and draw outside the bounds, the app can crash
         if (xPoint < (self.bounds.origin.x + self.bounds.size.width) && xPoint > 0 &&
             yPoint < (self.bounds.origin.y + self.bounds.size.height) && yPoint > 0) {
-            if (! didInitialPoint || x == 0) {
+            if (! didInitialPoint) {
                 CGContextMoveToPoint(context, xPoint, yPoint);
                 didInitialPoint = YES;
             }
@@ -135,10 +141,10 @@
                 CGContextAddLineToPoint(context, xPoint, yPoint);
             }
         }
-        else {
-            NSLog(@"discard point: x=%g, y=%g", xPoint, yPoint);
-        }
-	}
+        //else {
+        //    NSLog(@"discard point: x=%g, y=%g", xPoint, yPoint);
+        //}
+    }
     
     CGContextStrokePath(context);
 }
