@@ -15,81 +15,61 @@
 
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL userPressedVariableSET;
+@property (nonatomic) UIInterfaceOrientation lastReportedOrientation;
 @property (nonatomic, strong) CalculatorBrain *brain;
+
 @end
+
+
 
 @implementation CalculatorViewController
 
 @synthesize history = _history;
 @synthesize display = _display;
-@synthesize variables = _variables;
-@synthesize brain = _brain;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize userPressedVariableSET = _userPressedVariableSET;
+@synthesize lastReportedOrientation = _lastReportedOrientation;
+@synthesize brain = _brain;
+@synthesize variables = _variables;
 
 
-- (CalculatorBrain *)brain
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    if (!_brain)
-    {
-        _brain = [[CalculatorBrain alloc] init];
+    self.lastReportedOrientation = [UIDevice currentDevice].orientation;
+    //NSString *orientation =  UIInterfaceOrientationIsPortrait(self.lastReportedOrientation) ? @"PORTRAIT" : @"LANDSCAPE";
+    //NSLog(@"CalculatorViewController shouldAutorotateToInterfaceOrientation orientation=%@", orientation);
+    if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        return UIInterfaceOrientationIsPortrait(interfaceOrientation); // iPhone logic
     }
-    return _brain;
+    return YES; // iPad logic
+}
+
+- (void)setup
+{
+    NSLog(@"CalculatorViewController setup");
+    [self setBrain:nil];
+    if ([self splitViewGraphViewController]) {
+        [self splitViewGraphViewController].delegate = [self modalViewController];
+        NSLog(@"IMPORTANT! set the splitViewGraphViewController.delegate");
+        [[self splitViewGraphViewController] setBrain:[[self brain] copy]];
+    }
 }
 
 - (void)awakeFromNib
 {
     [super awakeFromNib];
-    NSLog(@"CalculatorViewController awakeFromNib");
-    if ([self splitViewGraphViewController]) {
-        self.splitViewController.delegate = self;
-        NSLog(@"setting the splitViewController.delegate to 'self' (CalculatorViewController)");
+    [self setup];
+}
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        [self setup];
     }
+    return self;
 }
 
-- (id <SplitViewBarButtonItemPresenter>)splitViewBarButtonItemPresenter
-{
-    id detailVC = [self.splitViewController.viewControllers lastObject];
-    if (! [detailVC conformsToProtocol:@protocol(SplitViewBarButtonItemPresenter)]) {
-        detailVC = nil;
-        NSLog(@"detail view NOT splitViewBarButtonItemPresenter");
-    }
-    else {
-        NSLog(@"detail view CONFORMS TO splitViewBarButtonItemPresenter");
-    }
-    return detailVC;
-}
-
-- (BOOL)splitViewController:(UISplitViewController *)svc
-        shouldHideViewController:(UIViewController *)vc
-        inOrientation:(UIInterfaceOrientation)orientation
-{
-    // if we implement the protocol then allow the left side to hide in portrait mode
-    return [self splitViewBarButtonItemPresenter] ? UIInterfaceOrientationIsPortrait(orientation) : NO;
-}
-
-- (void)splitViewController:(UISplitViewController *)svc
-        willHideViewController:(UIViewController *)aViewController
-        withBarButtonItem:(UIBarButtonItem *)barButtonItem
-        forPopoverController:(UIPopoverController *)pc
-{
-    NSLog(@"CalculatorViewController splitViewController willHideViewController");
-    barButtonItem.title = @"Calculator";
-    // tell the ViewController to display the button item.
-    [self splitViewBarButtonItemPresenter].splitViewBarButtonItem = barButtonItem;
-}
-
-- (void)splitViewController:(UISplitViewController *)svc
-        willShowViewController:(UIViewController *)aViewController
-        invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
-{
-    NSLog(@"CalculatorViewController splitViewController willShowViewController - destroy the bar button");
-    // remove the bar button item as the hidden view will now be shown on right side
-    [self splitViewBarButtonItemPresenter].splitViewBarButtonItem = nil;
-}
-
-//----------------------------------------------------------------------------
- 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -104,26 +84,69 @@
     // Release any retained subviews of the main view.
 }
 
-- (void)viewWillAppear:(BOOL)animated {
+- (void)viewWillAppear:(BOOL)animated
+{
     [super viewWillAppear:animated];
     // we don't want to see the navigation bar for the main screen
     [self.navigationController setNavigationBarHidden:YES animated:YES];
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
+- (void)viewWillDisappear:(BOOL)animated
+{
     [super viewWillDisappear:animated];
     // but we do want to see the navigation bar in sub views
     [self.navigationController setNavigationBarHidden:NO animated:YES];
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (id <SplitViewBarButtonItemPresenter>)splitViewBarButtonItemPresenter
 {
-    if ([self splitViewGraphViewController]) {
-        NSLog(@"CalculatorViewController shouldAutorotateToInterfaceOrientation - we are inside a UISplitViewController");
-        return YES;
+    id detailVC = [self.splitViewController.viewControllers lastObject];
+    if (! [detailVC conformsToProtocol:@protocol(SplitViewBarButtonItemPresenter)]) {
+        detailVC = nil;
     }
-    NSLog(@"CalculatorViewController shouldAutorotateToInterfaceOrientation - we are NOT inside a UISplitViewController");
-    return UIInterfaceOrientationIsPortrait(interfaceOrientation);
+    return detailVC;
+}
+
+- (BOOL)splitViewController:(UISplitViewController *)svc
+        shouldHideViewController:(UIViewController *)vc
+        inOrientation:(UIInterfaceOrientation)orientation
+{
+    // if we implement the protocol then allow the left side to hide in portrait mode
+    BOOL rc = [self splitViewBarButtonItemPresenter] ? UIInterfaceOrientationIsPortrait(self.lastReportedOrientation) : NO;
+    NSLog(@"LEE: CalculatorViewController splitViewController shouldHideViewController.  rc=%d", rc);
+    return rc;
+}
+
+- (void)splitViewController:(UISplitViewController *)svc
+        willHideViewController:(UIViewController *)aViewController
+        withBarButtonItem:(UIBarButtonItem *)barButtonItem
+        forPopoverController:(UIPopoverController *)pc
+{
+    // tell the ViewController to display the button item.
+    [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:YES];
+    NSLog(@"LEE: CalculatorViewController splitViewController willHideViewController");
+}
+
+- (void)splitViewController:(UISplitViewController *)svc
+        willShowViewController:(UIViewController *)aViewController
+        invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
+{
+    // remove the bar button item as the hidden view will now be shown on right side
+    [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:NO];
+    NSLog(@"LEE: CalculatorViewController splitViewController willShowViewController");
+}
+
+
+//----------------------------------------------------------------------------
+
+
+- (CalculatorBrain *)brain
+{
+    if (!_brain)
+    {
+        _brain = [[CalculatorBrain alloc] init];
+    }
+    return _brain;
 }
 
 - (void)updateDisplayWithText:(NSString *)someText
@@ -303,11 +326,6 @@
         self.userPressedVariableSET = NO;
     }
     [self useDefaultButtonFunctionality];
-    // dump content of CalculatorBrain for debug
-    NSLog(@"------------------------------------");
-    NSLog(@"VARIABLES=%@", [self.brain variables]);
-    NSLog(@"PROGRAM=%@", [self.brain program]);
-    NSLog(@"------------------------------------");
 }
 
 - (IBAction)clearPressed
@@ -450,7 +468,6 @@
     // determine if we are in the split-view
     id vc = [self.splitViewController.viewControllers lastObject];
     if (! [vc isKindOfClass:[GraphViewController class]]) {
-        NSLog(@"--> GraphViewController splitViewGraphViewController - the self.splitViewController is NOT a GraphViewController");
         vc = nil;
     }
     return vc;
@@ -468,21 +485,12 @@
         [self updateDisplayWithText:@"ERROR"];
     }
     else {
-        if (! [self splitViewGraphViewController]) {
-            // iPhone controller so we need to segway to the GraphView
+        if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+            NSLog(@"iPhone controller so we need to segway to the GraphView");
             [self performSegueWithIdentifier:@"ShowGraphView" sender:self];
         }
         else {
-            // iPad controller, so just send a message to update the graph
-            // but if we are in portrait mode, we first need to hide the CalculatorView
-            UIDeviceOrientation orientation = [UIDevice currentDevice].orientation;
-            if (UIInterfaceOrientationIsPortrait(orientation)) { // FIXME: the INITIAL orientation is backwards - why?
-                NSLog(@"graphXY: in PORTRAIT mode - we need to hide the CaluclatorViewController's view");
-                // FIXME: i can't find a way to make the CalculatorViewController's view disappear.
-            }
-            else {
-                NSLog(@"graphXY: in LANDSCAPE mode - we do NOT need to hide the CaluclatorViewController's view");
-            }
+            NSLog(@"iPad controller, so just send a message to update the graph");
             [[self splitViewGraphViewController] setBrain:[[self brain] copy]];
         }
     }

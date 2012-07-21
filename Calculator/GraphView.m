@@ -94,7 +94,6 @@
 // An empty implementation adversely affects performance during animation.
 - (void)drawRect:(CGRect)rect
 {
-    NSLog(@"GraphView drawRect");
     CGContextRef context = UIGraphicsGetCurrentContext();
     
     CGPoint midPoint; // center of our bounds in our coordinate system
@@ -113,7 +112,7 @@
     [AxesDrawer drawAxesInRect:self.bounds originAtPoint:midPoint scale:self.scale*self.contentScaleFactor];
     
     if (! [self.delegate isValidProgram]) {
-        NSLog(@"GraphView: nothing to graph except the axes");
+        //NSLog(@"GraphView: nothing to graph except the axes");
         return;
     }
 

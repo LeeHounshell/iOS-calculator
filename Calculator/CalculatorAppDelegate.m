@@ -10,11 +10,19 @@
 
 @implementation CalculatorAppDelegate
 
-@synthesize window = _window;
+@synthesize window;
+@synthesize splitViewController = _splitViewController;
+@synthesize leftViewController = _leftViewController;
+@synthesize rightViewController = _rightViewController;
+
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
-    // Override point for customization after application launch.
+{    
+    
+    // Override point for customization after application launch
+    [window addSubview:_splitViewController.view];
+    [window makeKeyAndVisible];
+
     return YES;
 }
 
