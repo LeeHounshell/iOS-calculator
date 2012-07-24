@@ -8,12 +8,14 @@
 
 #import "GraphViewController.h"
 #import "GraphView.h"
+#import "CalculatorViewController.h"
 
 @interface GraphViewController ()
 
 @property (nonatomic, weak) IBOutlet GraphView *graphView;
 @property (nonatomic, weak) IBOutlet UIToolbar *toolbar;
 @property (nonatomic) UIInterfaceOrientation lastReportedOrientation;
+@property (nonatomic, strong) UIPopoverController *myPopoverController;
 
 @end
 
@@ -22,7 +24,6 @@
 @implementation GraphViewController
 
 @synthesize delegate = _delegate;
-@synthesize brain = _brain;
 @synthesize graphView = _graphView;
 @synthesize toolbar = _toolbar;
 @synthesize myPopoverController = _myPopoverController;
@@ -31,7 +32,7 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    self.lastReportedOrientation = [UIDevice currentDevice].orientation;
+    self.lastReportedOrientation = interfaceOrientation;
     NSString *orientation =  UIInterfaceOrientationIsPortrait(self.lastReportedOrientation) ? @"PORTRAIT" : @"LANDSCAPE";
     //NSLog(@"GraphViewController shouldAutorotateToInterfaceOrientation orientation=%@", orientation);
     if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
@@ -46,8 +47,8 @@
 
 - (void)setup
 {
-    NSLog(@"GraphViewController setup");
-    [self setBrain:nil]; // NOTE: nil will display "Graph" in the title
+    //NSLog(@"GraphViewController setup");
+    self.lastReportedOrientation = UIDeviceOrientationPortrait; // careful, iOS doesn't properly report initial orientation
 }
 
 - (void)awakeFromNib
@@ -69,6 +70,7 @@
 {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+    [self doGraph:self.delegate];
 }
 
 - (void)viewDidUnload
@@ -94,24 +96,15 @@
     return detailVC;
 }
 
-- (BOOL)splitViewController:(UISplitViewController *)svc
-   shouldHideViewController:(UIViewController *)vc
-              inOrientation:(UIInterfaceOrientation)orientation
-{
-    // if we implement the protocol then allow the left side to hide in portrait mode
-    BOOL rc = [self splitViewBarButtonItemPresenter] ? UIInterfaceOrientationIsPortrait(self.lastReportedOrientation) : NO;
-    NSLog(@"LEE: GraphViewController splitViewController shouldHideViewController.  rc=%d", rc);
-    return rc;
-}
-
 - (void)splitViewController:(UISplitViewController *)svc
      willHideViewController:(UIViewController *)aViewController
           withBarButtonItem:(UIBarButtonItem *)barButtonItem
        forPopoverController:(UIPopoverController *)pc
 {
     // tell the ViewController to display the button item.
+    NSLog(@"GraphViewController splitViewController willHideViewController");
     [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:YES];
-    NSLog(@"LEE: GraphViewController splitViewController willHideViewController");
+    self.myPopoverController = pc;
 }
 
 - (void)splitViewController:(UISplitViewController *)svc
@@ -119,18 +112,28 @@
   invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
 {
     // remove the bar button item as the hidden view will now be shown on right side
+    NSLog(@"GraphViewController splitViewController willShowViewController");
     [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:NO];
-    NSLog(@"LEE: GraphViewController splitViewController willShowViewController");
 }
 
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+                                duration:(NSTimeInterval)duration
+{
+    NSLog(@"GraphViewController ROTATING");
+    [self dismissPopover];
+}
 
 //----------------------------------------------------------------------------
 
+- (CalculatorBrain *)brain;
+{
+    return [self.delegate brain];
+}
 
 - (void)setSplitViewBarButtonItem:(UIBarButtonItem *)splitViewBarButtonItem atPosition:(int)index
 {
-    NSMutableArray *toolbarItems = [self.toolbar.items mutableCopy];
     if (splitViewBarButtonItem) {
+        NSMutableArray *toolbarItems = [self.toolbar.items mutableCopy];
         // indexes: 0=Calculator 1=spacer 2=TITLE 3=spacer
         [toolbarItems replaceObjectAtIndex:index withObject:splitViewBarButtonItem];
         self.toolbar.items = toolbarItems;
@@ -141,8 +144,13 @@
 {
     NSMutableArray *toolbarItems = [self.toolbar.items mutableCopy];
     NSObject *item = [toolbarItems objectAtIndex:index];
-    BOOL isPortrait = UIInterfaceOrientationIsPortrait(self.interfaceOrientation);
-    //NSLog(@"FOOBAR INITIAL ORIENTATION: displayItHint=%d isPortrait=%d", displayItHint, isPortrait);
+    UIInterfaceOrientation  orientation = [UIDevice currentDevice].orientation;
+    // it seems very difficult to always get correct orientation when the program begins
+    BOOL isPortrait = UIInterfaceOrientationIsPortrait([UIDevice currentDevice].orientation)
+      || self.lastReportedOrientation == UIDeviceOrientationPortrait
+      || self.lastReportedOrientation == UIDeviceOrientationPortraitUpsideDown
+      || orientation == UIDeviceOrientationPortrait
+      || orientation == UIDeviceOrientationPortraitUpsideDown;
     if (displayItHint || isPortrait) {
         if (item && [item isKindOfClass:[UIBarButtonItem class]]) {
             UIBarButtonItem *button = (UIBarButtonItem *)item;
@@ -170,46 +178,6 @@
     }
 }
 
-- (void)DoCalculatorPopover // segway from a UIBarButtonItem
-{
-    NSLog(@"DoCalculatorPopover");
-    UIViewController *theViewC = (UIViewController *)self.delegate;
-    [self.myPopoverController presentPopoverFromRect:theViewC.view.frame 
-                                              inView:self.view 
-                            permittedArrowDirections:UIPopoverArrowDirectionDown
-                                            animated:YES];    
-}
-
-- (void)setBrain:(CalculatorBrain *)brain
-{
-    if (nil == _brain && brain == nil) {
-        return;
-    }
-    NSLog(@"GraphViewController setBrain");
-    _brain = brain;
-    NSString *newTitle = @"Graph";
-    NSString *description = [self.brain description];
-    if (description && ! [description isEqualToString:@""]) {
-        newTitle = [NSString stringWithFormat:@"Y=%@", description];
-    }
-    NSLog(@"the splitViewBarButtonItem has changed.  newTitle=%@", newTitle);
-    UILabel *newTitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 44)];
-    newTitleLabel.lineBreakMode = UILineBreakModeTailTruncation;
-    newTitleLabel.textAlignment = UITextAlignmentCenter;
-    newTitleLabel.backgroundColor = [UIColor clearColor];
-    newTitleLabel.shadowOffset = CGSizeMake(0, 1);
-    newTitleLabel.textColor = [UIColor grayColor];
-    newTitleLabel.text = newTitle;
-    newTitleLabel.font = [UIFont boldSystemFontOfSize:20.0];
-    UIBarButtonItem *toolBarTitle = [[UIBarButtonItem alloc] initWithCustomView:newTitleLabel];
-    [self setSplitViewBarButtonItem:toolBarTitle atPosition:2];
-    BOOL displayIt = UIDeviceOrientationIsPortrait([UIDevice currentDevice].orientation);
-    if (self.delegate) {
-        [self setupSplitViewBarButtonItemAtPosition:0 doDisplay:displayIt]; // setup the back button, if needed
-    }
-    [self.graphView setNeedsDisplay]; // draw the graph every time brain is set
-}
-
 - (void)setGraphView:(GraphView *)graphView
 {
     _graphView = graphView;
@@ -232,17 +200,76 @@
               || ([[[self brain] program] lastObject] == nil));
 }
 
+- (void)doGraph:(CalculatorViewController *)delegate
+{
+    NSLog(@"GraphViewController doGraph. delegate=%@", delegate);
+    self.delegate = delegate;
+    NSString *newTitle = @"Graph";
+    NSString *description = [[self brain] description];
+    if (description && ! [description isEqualToString:@""]) {
+        newTitle = [NSString stringWithFormat:@"Y=%@", description];
+    }
+    NSLog(@"the splitViewBarButtonItem has changed.  newTitle=%@", newTitle);
+    UILabel *newTitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 44)];
+    newTitleLabel.lineBreakMode = UILineBreakModeTailTruncation;
+    newTitleLabel.textAlignment = UITextAlignmentCenter;
+    newTitleLabel.backgroundColor = [UIColor clearColor];
+    newTitleLabel.shadowOffset = CGSizeMake(0, 1);
+    newTitleLabel.textColor = [UIColor grayColor];
+    newTitleLabel.text = newTitle;
+    newTitleLabel.font = [UIFont boldSystemFontOfSize:20.0];
+    UIBarButtonItem *toolBarTitle = [[UIBarButtonItem alloc] initWithCustomView:newTitleLabel];
+    [self setSplitViewBarButtonItem:toolBarTitle atPosition:2];
+    BOOL displayIt = UIDeviceOrientationIsPortrait(self.lastReportedOrientation);
+    if (self.delegate) {
+        [self setupSplitViewBarButtonItemAtPosition:0 doDisplay:displayIt]; // setup the back button, if needed
+    }
+    [self.graphView setNeedsDisplay]; // draw the graph
+}
+
 - (double)calculateYResultForXValue:(CGFloat)x requestor:(GraphView *)graphView
 {
-    NSArray *programX = [[[self.brain variables] objectForKey:@"X"] copy];
+    NSArray *programX = [[[[self brain] variables] objectForKey:@"X"] copy];
     NSArray *valueX = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)x], nil];
-    [self.brain setVariable:@"X" withValue:valueX]; // we temporarially replace X with the plot value
-    NSArray *myProgram = [self.brain program];
-    NSDictionary *myVariables = [self.brain variables];
+    [[self brain] setVariable:@"X" withValue:valueX]; // we temporarially replace X with the plot value
+    NSArray *myProgram = [[self brain] program];
+    NSDictionary *myVariables = [[self brain] variables];
     double result = [CalculatorBrain runProgram:myProgram usingVariableValues:myVariables];
-    [self.brain setVariable:@"X" withValue:programX]; // put back the original X program
+    [[self brain] setVariable:@"X" withValue:programX]; // put back the original X program
     //NSLog(@"For x=%g calculateYResultForXValue=%g", x, result);
     return result;
 }
 
+- (void)DoCalculatorPopover // segue from a UIBarButtonItem
+{
+    NSLog(@"DoCalculatorPopover");
+    UIViewController *theViewC = (UIViewController *)self.delegate;
+    // make the popover appear
+    CalculatorViewController *pvc = [[CalculatorViewController alloc] init]; // FIXME: the popup needs a brain
+    self.myPopoverController = [[UIPopoverController alloc] initWithContentViewController:pvc];
+    self.myPopoverController.popoverContentSize = CGSizeMake(320, 500);
+    [self.myPopoverController presentPopoverFromRect:theViewC.view.frame 
+                                              inView:self.view 
+                            permittedArrowDirections:UIPopoverArrowDirectionDown
+                                            animated:YES];    
+}
+
+- (void)dismissPopover
+{
+    NSLog(@"===> GraphViewController dismissPopover <===");
+    if (UIInterfaceOrientationIsPortrait(self.lastReportedOrientation))
+    {
+        NSLog(@"dismissPopover - portrait mode - DISPLAY the toolbar button");
+        [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:YES];
+    }
+    else {
+        NSLog(@"dismissPopover - landscape mode - HIDE the toolbar button");
+        [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:NO];
+    }
+    //NSArray *viewControllers = self.navigationController.viewControllers;
+    //[self.navigationController popToViewController:[viewControllers objectAtIndex:0] animated:YES];
+    //[self dismissViewControllerAnimated:YES completion:nil];
+    [self.myPopoverController dismissPopoverAnimated:YES];
+    //[[self parentViewController] dismissModalViewControllerAnimated:YES];
+}
 @end

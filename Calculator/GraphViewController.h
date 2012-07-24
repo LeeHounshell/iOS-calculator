@@ -10,12 +10,18 @@
 #import "GraphView.h"
 #import "CalculatorBrain.h"
 
+
 @protocol SplitViewBarButtonItemPresenter <NSObject>
+
 - (void)setupSplitViewBarButtonItemAtPosition:(int)index doDisplay:(BOOL)displayItHint;
-@property (nonatomic, strong) UIPopoverController *myPopoverController;
 @property (nonatomic, weak) id delegate;
+
 @end
 
+
 @interface GraphViewController : UIViewController <GraphViewDelegate, UISplitViewControllerDelegate, SplitViewBarButtonItemPresenter>
-@property (nonatomic, strong) CalculatorBrain *brain;
+
+- (void)doGraph:(id)delegate;
+
 @end
+

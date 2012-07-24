@@ -52,6 +52,13 @@
     return _variableValues;
 }
 
+- (void)setVariableValues:(NSMutableDictionary *)variableValues
+{
+    if (variableValues) {
+        _variableValues = [variableValues mutableCopy];
+    }
+}
+
 - (id)copyWithZone:(NSZone *) zone
 {
     NSLog(@"CalculatorBrain copyWithZone");
@@ -63,6 +70,7 @@
 
 - (BOOL)setVariable:(NSString *)variable withValue:(NSArray *)value
 {
+    NSLog(@"CalculatorBrain setVariable %@=%@", variable, value);
     if (!value || ! [value count]) {
         value = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)0], nil];
     }

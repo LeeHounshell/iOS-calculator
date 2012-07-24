@@ -10,16 +10,14 @@
 #import "CalculatorBrain.h"
 #import "GraphViewController.h"
 
-
 @interface CalculatorViewController ()
 
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL userPressedVariableSET;
-@property (nonatomic) UIInterfaceOrientation lastReportedOrientation;
-@property (nonatomic, strong) CalculatorBrain *brain;
+@property (weak, nonatomic) IBOutlet UILabel *variables;
+@property (nonatomic, strong) CalculatorBrain *theBrain;
 
 @end
-
 
 
 @implementation CalculatorViewController
@@ -28,16 +26,12 @@
 @synthesize display = _display;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize userPressedVariableSET = _userPressedVariableSET;
-@synthesize lastReportedOrientation = _lastReportedOrientation;
-@synthesize brain = _brain;
+@synthesize theBrain = _theBrain;
 @synthesize variables = _variables;
 
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    self.lastReportedOrientation = [UIDevice currentDevice].orientation;
-    //NSString *orientation =  UIInterfaceOrientationIsPortrait(self.lastReportedOrientation) ? @"PORTRAIT" : @"LANDSCAPE";
-    //NSLog(@"CalculatorViewController shouldAutorotateToInterfaceOrientation orientation=%@", orientation);
     if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
         return UIInterfaceOrientationIsPortrait(interfaceOrientation); // iPhone logic
     }
@@ -46,13 +40,7 @@
 
 - (void)setup
 {
-    NSLog(@"CalculatorViewController setup");
-    [self setBrain:nil];
-    if ([self splitViewGraphViewController]) {
-        [self splitViewGraphViewController].delegate = [self modalViewController];
-        NSLog(@"IMPORTANT! set the splitViewGraphViewController.delegate");
-        [[self splitViewGraphViewController] setBrain:[[self brain] copy]];
-    }
+    //NSLog(@"CalculatorViewController setup");
 }
 
 - (void)awakeFromNib
@@ -74,6 +62,14 @@
 {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    //NSLog(@"CalculatorViewController viewDidLoad");
+    [self setTheBrain:nil];
+    id theGraphViewC = [self splitViewGraphViewController];
+    if (theGraphViewC) {
+        [theGraphViewC setDelegate:self];
+        [[self splitViewGraphViewController] doGraph:self]; // initialize the GraphView
+    }
+    self.contentSizeForViewInPopover = CGSizeMake(320.0, 500.0);
 }
 
 - (void)viewDidUnload
@@ -98,55 +94,40 @@
     [self.navigationController setNavigationBarHidden:NO animated:YES];
 }
 
-- (id <SplitViewBarButtonItemPresenter>)splitViewBarButtonItemPresenter
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+                                duration:(NSTimeInterval)duration
 {
-    id detailVC = [self.splitViewController.viewControllers lastObject];
-    if (! [detailVC conformsToProtocol:@protocol(SplitViewBarButtonItemPresenter)]) {
-        detailVC = nil;
-    }
-    return detailVC;
+    NSLog(@"CalculatorViewController ROTATING");
 }
-
-- (BOOL)splitViewController:(UISplitViewController *)svc
-        shouldHideViewController:(UIViewController *)vc
-        inOrientation:(UIInterfaceOrientation)orientation
-{
-    // if we implement the protocol then allow the left side to hide in portrait mode
-    BOOL rc = [self splitViewBarButtonItemPresenter] ? UIInterfaceOrientationIsPortrait(self.lastReportedOrientation) : NO;
-    NSLog(@"LEE: CalculatorViewController splitViewController shouldHideViewController.  rc=%d", rc);
-    return rc;
-}
-
-- (void)splitViewController:(UISplitViewController *)svc
-        willHideViewController:(UIViewController *)aViewController
-        withBarButtonItem:(UIBarButtonItem *)barButtonItem
-        forPopoverController:(UIPopoverController *)pc
-{
-    // tell the ViewController to display the button item.
-    [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:YES];
-    NSLog(@"LEE: CalculatorViewController splitViewController willHideViewController");
-}
-
-- (void)splitViewController:(UISplitViewController *)svc
-        willShowViewController:(UIViewController *)aViewController
-        invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
-{
-    // remove the bar button item as the hidden view will now be shown on right side
-    [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:NO];
-    NSLog(@"LEE: CalculatorViewController splitViewController willShowViewController");
-}
-
 
 //----------------------------------------------------------------------------
 
 
-- (CalculatorBrain *)brain
+- (CalculatorBrain *)theBrain
 {
-    if (!_brain)
+    if (! _theBrain)
     {
-        _brain = [[CalculatorBrain alloc] init];
+        _theBrain = [[CalculatorBrain alloc] init];
     }
-    return _brain;
+    return _theBrain;
+}
+
+- (void)setTheBrain:(CalculatorBrain *)theBrain
+{
+    if (theBrain && _theBrain != theBrain) {
+        _theBrain = theBrain;
+    }
+    else if (! theBrain) {
+        _theBrain = nil;
+        _theBrain = [self theBrain];
+    }
+    id theGraphViewC = [self splitViewGraphViewController];
+    [theGraphViewC doGraph:self];
+}
+
+- (id)brain
+{
+    return self.theBrain;
 }
 
 - (void)updateDisplayWithText:(NSString *)someText
@@ -162,7 +143,7 @@
 
 - (void)updateVariablesAndHistoryUsingInfixWithEquals:(BOOL)showEquals withKeypress:(NSString *)variableKeypress
 {
-    NSString *resultString = [[CalculatorBrain descriptionOfProgram:[self.brain program]] copy];
+    NSString *resultString = [[CalculatorBrain descriptionOfProgram:[self.theBrain program]] copy];
     if ([resultString isEqualToString:@"ERROR"]) {
         [self disableAllButtonsExceptCLR_backspace];
         resultString = @"";
@@ -174,7 +155,7 @@
     }
     //NSLog(@"HISTORY=%@", resultString);
     self.history.text = [resultString copy];
-    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.brain program]];
+    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.theBrain program]];
     NSMutableSet *programVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
     if (variableKeypress) {
         [programVariablesUsed addObject:[NSString stringWithFormat:@"%@", variableKeypress]];
@@ -185,7 +166,7 @@
     NSString *varValues = @"";
     NSString *key;
     for (key in allVariables) {
-        NSDictionary *subProgram = [[self.brain variables] objectForKey:key];
+        NSDictionary *subProgram = [[self.theBrain variables] objectForKey:key];
         if (subProgram) {
             NSString *subValue = [CalculatorBrain descriptionOfProgram:subProgram];
             if ((! [@"0" isEqualToString:subValue]) || ([programVariablesUsed containsObject:key]))
@@ -259,7 +240,7 @@
         double lastCalculation = [CalculatorBrain lastDisplayResult];
         self.display.text = [NSString stringWithFormat:@"%g", lastCalculation];
     }
-    double result = [self.brain performOperation:sender.currentTitle usingVariableValues:[self.brain variables]];
+    double result = [self.theBrain performOperation:sender.currentTitle usingVariableValues:[self.theBrain variables]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     if (NAN == result) {
         [self disableAllButtonsExceptCLR_backspace];
@@ -278,7 +259,7 @@
     if ([self errorCondition]) {
         [self clearPressed];
     }
-    [self.brain pushOperand:[self.display.text doubleValue]];
+    [self.theBrain pushOperand:[self.display.text doubleValue]];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
 }
@@ -306,7 +287,7 @@
     }
     else {
         if (! self.userIsInTheMiddleOfEnteringANumber) {
-            double result = [self.brain performOperation:@"backspace" usingVariableValues:[self.brain variables]];
+            double result = [self.theBrain performOperation:@"backspace" usingVariableValues:[self.theBrain variables]];
             [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
             [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
         }
@@ -332,9 +313,14 @@
 {
     // NOTE: clear does not reset variable content
     [self clearEntryPressed];
-    [self.brain performOperation:@"clear" usingVariableValues:nil];
+    [self.theBrain performOperation:@"clear" usingVariableValues:nil];
     [self updateVariablesAndHistoryUsingInfixWithEquals:NO withKeypress:nil];
-    [[self splitViewGraphViewController] setBrain:nil];
+    NSMutableDictionary *keepVariables = [[self.theBrain variables] mutableCopy];
+    [self setTheBrain:nil];
+    for (NSString *key in keepVariables) {
+        id theProgram = [keepVariables objectForKey:key];
+        [self.theBrain setVariable:key withValue:theProgram];
+    }
 }
 
 // helper method for recursive definition of variable
@@ -393,25 +379,25 @@
     static int recursionLevel = 0;
     if (self.userPressedVariableSET) {
         self.userPressedVariableSET = NO;
-        NSArray *theProgram = [self.brain program];
+        NSArray *theProgram = [self.theBrain program];
         // the entire currently entered program gets assigned to the specified variable
         if (NSNotFound != [theProgram indexOfObject:sender.currentTitle]) {
             // handle recursive variable expressions!
-            NSArray *origVariableContent = [[self.brain variables] objectForKey:sender.currentTitle];
+            NSArray *origVariableContent = [[self.theBrain variables] objectForKey:sender.currentTitle];
             theProgram = [self combinePrograms:theProgram and:origVariableContent forKey:sender.currentTitle];
             NSLog(@"redefined %@ to be %@", sender.currentTitle, theProgram);
         }
         // check for circular references that can't be resolved
-        NSMutableDictionary *testVariables = [[self.brain variables] mutableCopy];
+        NSMutableDictionary *testVariables = [[self.theBrain variables] mutableCopy];
         [testVariables removeObjectForKey:sender.currentTitle];
         [testVariables setValue:theProgram forKey:sender.currentTitle];
         if (([self variableLoopsEquations:sender.currentTitle usingVariableValues:testVariables])
-         || (! [[self brain] setVariable:sender.currentTitle withValue:theProgram])) {
+         || (! [self.theBrain setVariable:sender.currentTitle withValue:theProgram])) {
             [self disableAllButtonsExceptCLR_backspace];
             return;
         }
         // push the variable just set onto the display stack for convenience now
-        [self variablePressed:sender];
+        [self variablePressed:sender]; // recursive
         // enable buttons and change used variables' button color
         [self useDefaultButtonFunctionality];
         if (! recursionLevel) {
@@ -424,7 +410,7 @@
         }
         //----------------------------------------
         // here a variable is being used as an operand
-        NSArray *variableValue = [[self.brain variables] objectForKey:sender.currentTitle];
+        NSArray *variableValue = [[self.theBrain variables] objectForKey:sender.currentTitle];
         if (variableValue) {
             [self operationPressed:sender];
         }
@@ -451,58 +437,6 @@
     self.userPressedVariableSET = YES;
 }
 
-- (void)useDefaultButtonFunctionality
-{
-    // restore all disabled buttons to active
-    for (UIView *view in [[self view] subviews]) {
-        if ([view isKindOfClass:[UIButton class]]) {
-            UIButton *button = (UIButton *)view;
-            [button setEnabled:YES];
-            [button setAlpha:1.0];
-        }
-    }
-}
-
-- (GraphViewController *)splitViewGraphViewController
-{
-    // determine if we are in the split-view
-    id vc = [self.splitViewController.viewControllers lastObject];
-    if (! [vc isKindOfClass:[GraphViewController class]]) {
-        vc = nil;
-    }
-    return vc;
-}
-
-- (IBAction)graphXY
-{
-    if (self.userIsInTheMiddleOfEnteringANumber) {
-        [self enterPressed];
-    }
-    NSString *description = [CalculatorBrain descriptionOfProgram:[self.brain program]];
-    NSRange range = [description rangeOfString:@"?"];
-    if (range.length || [self errorCondition]) {
-        [[self splitViewGraphViewController] setBrain:nil];
-        [self updateDisplayWithText:@"ERROR"];
-    }
-    else {
-        if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-            NSLog(@"iPhone controller so we need to segway to the GraphView");
-            [self performSegueWithIdentifier:@"ShowGraphView" sender:self];
-        }
-        else {
-            NSLog(@"iPad controller, so just send a message to update the graph");
-            [[self splitViewGraphViewController] setBrain:[[self brain] copy]];
-        }
-    }
-}
-
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
-    if ([segue.identifier isEqualToString:@"ShowGraphView"]) {
-        [segue.destinationViewController setBrain:[self.brain copy]];
-    }
-}
-
 - (void)disableAllButtonsExceptCLR_backspace
 {
     self.history.text = @"";
@@ -523,6 +457,61 @@
                 [button setAlpha:0.3];
             }
         }
+    }
+}
+
+- (void)useDefaultButtonFunctionality
+{
+    // restore all disabled buttons to active
+    for (UIView *view in [[self view] subviews]) {
+        if ([view isKindOfClass:[UIButton class]]) {
+            UIButton *button = (UIButton *)view;
+            [button setEnabled:YES];
+            [button setAlpha:1.0];
+        }
+    }
+}
+
+- (id)splitViewGraphViewController
+{
+    // determine if we are in the split-view
+    id vc = [self.splitViewController.viewControllers lastObject];
+    if ([vc isKindOfClass:[GraphViewController class]]) {
+        [vc setDelegate:self];
+    }
+    else {
+        vc = nil;
+    }
+    return vc;
+}
+
+- (IBAction)graphXY
+{
+    if (self.userIsInTheMiddleOfEnteringANumber) {
+        [self enterPressed];
+    }
+    NSString *description = [CalculatorBrain descriptionOfProgram:[self.theBrain program]];
+    NSRange range = [description rangeOfString:@"?"];
+    if (range.length || [self errorCondition]) {
+        [self setTheBrain:nil];
+        [self updateDisplayWithText:@"ERROR"];
+    }
+    else {
+        if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+            NSLog(@"iPhone controller so we need to segue to the GraphView");
+            [self performSegueWithIdentifier:@"ShowGraphView" sender:self];
+        }
+        else {
+            NSLog(@"iPad controller, so just send a message to update the graph");
+            [[self splitViewGraphViewController] doGraph:self];
+        }
+    }
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([segue.identifier isEqualToString:@"ShowGraphView"]) {
+        [segue.destinationViewController doGraph:self];
     }
 }
 
