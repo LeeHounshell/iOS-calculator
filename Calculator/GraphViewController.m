@@ -265,8 +265,9 @@
         [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:NO];
     }
     if ([self.myPopoverController isPopoverVisible]) {
-        NSLog(@"FIXME: the popover is greyed-out, but still visible..");
-        [self.myPopoverController dismissPopoverAnimated:YES]; // FIXME: unfortunately, this does not work
+        NSLog(@"the popover is greyed-out, but still visible..");
+        //[self.myPopoverController dismissPopoverAnimated:YES]; // unfortunately, dismiss does not work
+        self.myPopoverController.popoverContentSize = CGSizeMake(0.0, 0.0); // but this works!
     }
 }
 
