@@ -243,15 +243,13 @@
 - (void)DoCalculatorPopover // segue from a UIBarButtonItem
 {
     NSLog(@"DoCalculatorPopover");
-    UIViewController *theViewC = (UIViewController *)self.delegate;
-    // make the popover appear
-    CalculatorViewController *pvc = [[CalculatorViewController alloc] init]; // FIXME: the popup needs a brain
-    self.myPopoverController = [[UIPopoverController alloc] initWithContentViewController:pvc];
-    self.myPopoverController.popoverContentSize = CGSizeMake(320, 500);
-    [self.myPopoverController presentPopoverFromRect:theViewC.view.frame 
-                                              inView:self.view 
-                            permittedArrowDirections:UIPopoverArrowDirectionDown
-                                            animated:YES];    
+    CalculatorViewController *masterVC = (CalculatorViewController *)[self.splitViewController.viewControllers objectAtIndex:0];
+    self.myPopoverController = [[UIPopoverController alloc] initWithContentViewController:masterVC];
+    
+    [self.myPopoverController presentPopoverFromRect:CGRectMake(0, 0, 1, 1)
+                                              inView:self.view
+                            permittedArrowDirections:UIPopoverArrowDirectionUp
+                                            animated:YES];
 }
 
 - (void)dismissPopover
@@ -266,10 +264,10 @@
         NSLog(@"dismissPopover - landscape mode - HIDE the toolbar button");
         [[self splitViewBarButtonItemPresenter] setupSplitViewBarButtonItemAtPosition:0 doDisplay:NO];
     }
-    //NSArray *viewControllers = self.navigationController.viewControllers;
-    //[self.navigationController popToViewController:[viewControllers objectAtIndex:0] animated:YES];
-    //[self dismissViewControllerAnimated:YES completion:nil];
-    [self.myPopoverController dismissPopoverAnimated:YES];
-    //[[self parentViewController] dismissModalViewControllerAnimated:YES];
+    if ([self.myPopoverController isPopoverVisible]) {
+        NSLog(@"FIXME: the popover is greyed-out, but still visible..");
+        [self.myPopoverController dismissPopoverAnimated:YES]; // FIXME: unfortunately, this does not work
+    }
 }
+
 @end

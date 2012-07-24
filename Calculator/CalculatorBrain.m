@@ -70,7 +70,7 @@
 
 - (BOOL)setVariable:(NSString *)variable withValue:(NSArray *)value
 {
-    NSLog(@"CalculatorBrain setVariable %@=%@", variable, value);
+    //NSLog(@"CalculatorBrain setVariable %@=%@", variable, value);
     if (!value || ! [value count]) {
         value = [[NSArray alloc] initWithObjects:[NSNumber numberWithDouble:(double)0], nil];
     }
