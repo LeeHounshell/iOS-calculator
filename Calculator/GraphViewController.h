@@ -11,17 +11,12 @@
 #import "CalculatorBrain.h"
 
 
-@protocol SplitViewBarButtonItemPresenter <NSObject>
 
-- (void)setupSplitViewBarButtonItemAtPosition:(int)index doDisplay:(BOOL)displayItHint;
+@interface GraphViewController : UIViewController <GraphViewDelegate, UISplitViewControllerDelegate>
+
+- (void)doGraph;
+
 @property (nonatomic, weak) id delegate;
-
-@end
-
-
-@interface GraphViewController : UIViewController <GraphViewDelegate, UISplitViewControllerDelegate, SplitViewBarButtonItemPresenter>
-
-- (void)doGraph:(id)delegate;
 
 @end
 

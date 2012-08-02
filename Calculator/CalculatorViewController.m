@@ -12,9 +12,12 @@
 
 @interface CalculatorViewController ()
 
+@property (weak, nonatomic) IBOutlet UILabel *history;
+@property (weak, nonatomic) IBOutlet UILabel *display;
+@property (weak, nonatomic) IBOutlet UILabel *variables;
+
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL userPressedVariableSET;
-@property (weak, nonatomic) IBOutlet UILabel *variables;
 @property (nonatomic, strong) CalculatorBrain *theBrain;
 
 @end
@@ -24,10 +27,12 @@
 
 @synthesize history = _history;
 @synthesize display = _display;
+@synthesize variables = _variables;
+
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize userPressedVariableSET = _userPressedVariableSET;
 @synthesize theBrain = _theBrain;
-@synthesize variables = _variables;
+@synthesize graphViewCtl = _graphViewCtl;
 
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -63,11 +68,10 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     //NSLog(@"CalculatorViewController viewDidLoad");
-    [self setTheBrain:nil];
-    id theGraphViewC = [self splitViewGraphViewController];
-    if (theGraphViewC) {
-        [theGraphViewC setDelegate:self];
-        [[self splitViewGraphViewController] doGraph:self]; // initialize the GraphView
+    self.graphViewCtl = [self splitViewGraphViewController];
+    if (self.graphViewCtl) {
+        [self.graphViewCtl setDelegate:self];
+        [self.graphViewCtl doGraph]; // initialize the GraphView
     }
     self.contentSizeForViewInPopover = CGSizeMake(320.0, 500.0);
 }
@@ -121,8 +125,7 @@
         _theBrain = nil;
         _theBrain = [self theBrain];
     }
-    id theGraphViewC = [self splitViewGraphViewController];
-    [theGraphViewC doGraph:self];
+    [self.graphViewCtl doGraph];
 }
 
 - (id)brain
@@ -143,46 +146,22 @@
 
 - (void)updateVariablesAndHistoryUsingInfixWithEquals:(BOOL)showEquals withKeypress:(NSString *)variableKeypress
 {
-    NSString *resultString = [[CalculatorBrain descriptionOfProgram:[self.theBrain program]] copy];
-    if ([resultString isEqualToString:@"ERROR"]) {
+    NSString *programDescription = [[CalculatorBrain descriptionOfProgram:[self.theBrain program]] copy];
+    if ([programDescription isEqualToString:@"ERROR"]) {
         [self disableAllButtonsExceptCLR_backspace];
-        resultString = @"";
+        programDescription = @"";
     }
     else {
         if (showEquals) {
-            resultString = [resultString stringByAppendingString:@" ="];
+            programDescription = [programDescription stringByAppendingString:@" ="];
         }
     }
-    //NSLog(@"HISTORY=%@", resultString);
-    self.history.text = [resultString copy];
-    NSSet *variablesUsed = [CalculatorBrain variablesUsedInProgram:[self.theBrain program]];
-    NSMutableSet *programVariablesUsed = [[NSMutableSet alloc] initWithSet:variablesUsed copyItems:YES];
-    if (variableKeypress) {
-        [programVariablesUsed addObject:[NSString stringWithFormat:@"%@", variableKeypress]];
-    }
-    // next update the variables.. show all defined variables
-    NSOrderedSet *allVariables = [[NSOrderedSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
-    NSString *separator = @",  ";
-    NSString *varValues = @"";
-    NSString *key;
-    for (key in allVariables) {
-        NSDictionary *subProgram = [[self.theBrain variables] objectForKey:key];
-        if (subProgram) {
-            NSString *subValue = [CalculatorBrain descriptionOfProgram:subProgram];
-            if ((! [@"0" isEqualToString:subValue]) || ([programVariablesUsed containsObject:key]))
-            {
-                // show variables that are used or are non-zero (but don't show unused with value zero)
-                varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"%@=%@%@", key, subValue, separator]];
-            }
-        }
-    }
-    if ([varValues hasSuffix:separator]) {
-        // strip trailing comma
-        varValues = [varValues substringToIndex:[varValues length] - [separator length]];
-    }
-    resultString = [NSString stringWithString:varValues];
-    //NSLog(@"VARIABLES=%@", resultString);
-    self.variables.text = [resultString copy];
+    //NSLog(@"HISTORY=%@", programDescription);
+    self.history.text = [programDescription copy];
+    // next show all defined variables
+    NSString *variablesDescription = [[CalculatorBrain descriptionOfVariables:[self.theBrain variables] forProgram:[self.theBrain program]] copy];
+    //NSLog(@"VARIABLES=%@", variablesDescription);
+    self.variables.text = [variablesDescription copy];
 }
 
 - (IBAction)digitPressed:(UIButton *)sender
@@ -235,7 +214,7 @@
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
-    NSLog(@"operationPressed=%@", sender.currentTitle);
+    //NSLog(@"operationPressed=%@", sender.currentTitle);
     if ([@"yⁿ" isEqualToString:sender.currentTitle]) {
         double lastCalculation = [CalculatorBrain lastDisplayResult];
         self.display.text = [NSString stringWithFormat:@"%g", lastCalculation];
@@ -355,7 +334,7 @@
             for (NSString *variable in [allVariablesUsed copy]) {
                 NSArray *subProgram = [myVariableValues objectForKey:variable];
                 if (subProgram) {
-                    NSSet *subVariablesUsed = [CalculatorBrain variablesUsedInProgram:subProgram];
+                    NSSet *subVariablesUsed = [[CalculatorBrain variablesUsedInProgram:subProgram] mutableCopy];
                     if ([subVariablesUsed count]) {
                         int oldCount = [allVariablesUsed count];
                         [allVariablesUsed unionSet:subVariablesUsed];
@@ -385,7 +364,7 @@
             // handle recursive variable expressions!
             NSArray *origVariableContent = [[self.theBrain variables] objectForKey:sender.currentTitle];
             theProgram = [self combinePrograms:theProgram and:origVariableContent forKey:sender.currentTitle];
-            NSLog(@"redefined %@ to be %@", sender.currentTitle, theProgram);
+            //NSLog(@"redefined %@ to be %@", sender.currentTitle, theProgram);
         }
         // check for circular references that can't be resolved
         NSMutableDictionary *testVariables = [[self.theBrain variables] mutableCopy];
@@ -474,15 +453,18 @@
 
 - (id)splitViewGraphViewController
 {
-    // determine if we are in the split-view
-    id vc = [self.splitViewController.viewControllers lastObject];
-    if ([vc isKindOfClass:[GraphViewController class]]) {
-        [vc setDelegate:self];
+    id gvc = self.graphViewCtl;
+    if (! gvc) {
+        // determine if we are in the split-view
+        gvc = [self.splitViewController.viewControllers lastObject];
+    }
+    if ([gvc isKindOfClass:[GraphViewController class]]) {
+        [gvc setDelegate:self];
     }
     else {
-        vc = nil;
+        gvc = nil;
     }
-    return vc;
+    return gvc;
 }
 
 - (IBAction)graphXY
@@ -503,16 +485,58 @@
         }
         else {
             NSLog(@"iPad controller, so just send a message to update the graph");
-            [[self splitViewGraphViewController] doGraph:self];
+            [self.graphViewCtl doGraph];
         }
     }
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
+    NSLog(@"CalculatorViewController prepareForSegue %@", segue.identifier);
     if ([segue.identifier isEqualToString:@"ShowGraphView"]) {
-        [segue.destinationViewController doGraph:self];
+        [segue.destinationViewController setDelegate:self];
+        [segue.destinationViewController doGraph];
     }
+    else {
+        NSLog(@"ERROR: unknown segue %@", segue.identifier);
+    }
+}
+
+- (void)remakeTheCalculator:(id)commLinkup
+{
+    if ([commLinkup isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"CalculatorViewController remakeTheCalculator");
+        NSDictionary *theCommLinkup = (NSDictionary *)commLinkup;
+        self.graphViewCtl = [theCommLinkup valueForKey:@"GraphViewController"];
+        self.theBrain = [theCommLinkup valueForKey:@"CalculatorBrain"];
+        [self.graphViewCtl setDelegate:self];
+    }
+}
+
+// sure.. it would have been easier to use properties for the program and variables, but this is more fun
+- (void)setProgram:(id)aProgram andVariables:(id)someVariables
+{
+    NSLog(@"CalculatorViewController setProgram andVariables");
+    [self.theBrain performOperation:@"clear" usingVariableValues:someVariables]; // clear program stack and set the variables
+    // now we can enter the new program..
+    double result = 0.0;
+    for (NSObject *someCalcObject in aProgram) {
+        if ([someCalcObject isKindOfClass:[NSNumber class]]) {
+            NSNumber *operand = (NSNumber *)someCalcObject;
+            [self.theBrain pushOperand:[operand doubleValue]];
+        }
+        else if ([someCalcObject isKindOfClass:[NSString class]]) {
+            NSString *operation = (NSString *)someCalcObject;
+            result = [self.theBrain performOperation:operation usingVariableValues:[self.theBrain variables]];
+        }
+        else {
+            NSLog(@"ERROR: unknown calculator program object found - %@", someCalcObject);
+        }
+    }
+    // fixup the display
+    [self updateDisplayWithText:[NSString stringWithFormat:@"%g", result]];
+    [self updateVariablesAndHistoryUsingInfixWithEquals:YES withKeypress:nil];
+    [self graphXY];
 }
 
 @end

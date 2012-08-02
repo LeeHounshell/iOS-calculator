@@ -10,13 +10,13 @@
 
 @implementation PostfixToInfix
 
-+(NSString *)convert:(NSArray *)program
++(NSString *)convert:(id)program
 {
     NSString *result = @"";
-    if ([program count]) {
+    if ([program isKindOfClass:[NSArray class]] && [program count]) {
         //NSLog(@"---------INFIX CONVERSION---------");
         //NSLog(@"RPN=%@", program);
-        NSMutableArray *theProgram = [[NSMutableArray alloc] initWithArray:program];
+        NSMutableArray *theProgram = [[NSMutableArray alloc] initWithArray:(NSArray *)program];
         NSMutableArray *evalStack = [[NSMutableArray alloc] init];
         NSSet *possibleUnaryOperators = [[NSSet alloc] initWithObjects:@"││", @"¹/x", @"sin", @"cos", @"tan", @"√", @"㏑", @"%", nil];
         NSSet *possibleBinaryOperators = [[NSSet alloc] initWithObjects:@"+", @"-", @"*", @"/", @"yⁿ", nil];

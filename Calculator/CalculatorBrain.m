@@ -10,15 +10,16 @@
 #import "PostfixToInfix.h"
 
 @interface CalculatorBrain()
+
 @property (nonatomic, strong) NSMutableArray *programStack;
 @property (nonatomic, strong) NSMutableDictionary *variableValues;
 
-
 + (void)setLastDisplayResult:(double)value;
 + (NSMutableArray *)replaceVariablesInProgram:(id)program usingValuesFrom:(id)myVariables;
-+(void)replaceOneVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value;
-+ (NSSet *)variablesUsedInProgram:(id)program;
++ (void)replaceOneVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value;
++ (NSSet *)variablesUsedInProgram:(id)program includingSubProgramsFor:(id)variables;
 + (NSString *)formatProgram:(NSArray *)theProgram;
+
 @end
 
 
@@ -250,10 +251,10 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     return [self runProgram:program usingVariableValues:nil];
 }
     
-+ (double)runProgram:(id)program usingVariableValues:(NSDictionary *)myVariableValues
++ (double)runProgram:(id)program usingVariableValues:(id)myVariableValues
 {
-    if (! [program isKindOfClass:[NSArray class]]) {
-        NSLog(@"ERROR: invalid program: %@", program);
+    if (! [program isKindOfClass:[NSArray class]] || ! [myVariableValues isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"ERROR: invalid program or variables: %@ for variables: %@", program, myVariableValues);
         return (double)0;
     }
     NSMutableArray *programStack = [program mutableCopy];
@@ -290,7 +291,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     return newProgram;
 }
 
-+(void)replaceOneVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value
++ (void)replaceOneVariable:(NSString *)operator inProgram:(NSMutableArray *)newProgram withValue:(double)value
 {
     //NSLog(@"calculated replacement subValue=%g for key=%@ in newProgram=%@", value, operator,newProgram);
     while (YES) {
@@ -302,7 +303,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     }
 }
 
-+ (NSSet *)variablesUsedInProgram:(id)program;
++ (NSSet *)variablesUsedInProgram:(id)program
 {
     NSMutableSet *varNames = [[NSMutableSet alloc] init];
     if ([program isKindOfClass:[NSArray class]]) {
@@ -324,12 +325,53 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     return [varNames copy];
 }
 
++ (NSSet *)variablesUsedInProgram:(id)program includingSubProgramsFor:(id)variables
+{
+    NSSet *workingVariables = [[CalculatorBrain variablesUsedInProgram:program] mutableCopy];
+    NSMutableSet *usedVariables = [workingVariables mutableCopy];
+    for (NSString *variable in workingVariables) {
+        id theSubProgram = [variables objectForKey:variable];
+        [usedVariables unionSet:[CalculatorBrain variablesUsedInProgram:theSubProgram includingSubProgramsFor:variables]];
+    }
+    return usedVariables;
+}
+
 + (NSString *)descriptionOfProgram:(id)program
 {
     if ([program isKindOfClass:[NSArray class]]) {
         return [CalculatorBrain formatProgram:program];
     }
     return @"";
+}
+
++ (NSString *)descriptionOfVariables:(id)variables forProgram:(id)program
+{
+    NSString *varValues = @"";
+    if (! [variables isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"descriptionOfVariables for invalid variables!");
+        return varValues;
+    }
+    NSOrderedSet *possibleVariables = [[NSOrderedSet alloc] initWithObjects:@"A", @"B", @"C", @"X", @"Y", @"Z", nil];
+    NSMutableDictionary *resultVariablesDict = [[NSMutableDictionary alloc] initWithCapacity:[possibleVariables count]];
+    NSMutableSet *programVariablesUsed = [[self variablesUsedInProgram:program includingSubProgramsFor:variables] mutableCopy];
+    NSDictionary *theVariables = (NSDictionary *)variables;
+    NSString *separator = @",  ";
+    for (NSString *key in programVariablesUsed) {
+        NSArray *subProgram = [theVariables objectForKey:key];
+        NSString *descriptionOfSubProgram = [CalculatorBrain descriptionOfProgram:subProgram];
+        [resultVariablesDict setValue:descriptionOfSubProgram forKey:key];
+    }
+    for (NSString *key in possibleVariables) {
+        NSString *subProgram = [resultVariablesDict objectForKey:key];
+        if (subProgram) {
+            varValues = [varValues stringByAppendingString:[NSString stringWithFormat:@"%@=%@%@", key, subProgram, separator]];
+        }
+    }
+    if ([varValues hasSuffix:separator]) {
+        // strip trailing comma
+        varValues = [varValues substringToIndex:[varValues length] - [separator length]];
+    }
+    return varValues;
 }
 
 + (NSString *)formatProgram:(NSArray *)theProgram

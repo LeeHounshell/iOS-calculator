@@ -112,9 +112,10 @@
     [AxesDrawer drawAxesInRect:self.bounds originAtPoint:midPoint scale:self.scale*self.contentScaleFactor];
     
     if (! [self.delegate isValidProgram]) {
-        //NSLog(@"GraphView: nothing to graph except the axes");
+        NSLog(@"GraphView: nothing to graph except the axes");
         return;
     }
+    NSLog(@"GraphView: graphing the equation..");
 
     [[UIColor blueColor] setStroke];
     // loop through all X and invoke delegate calculateYResultForXValue to determine Y.  plot values.

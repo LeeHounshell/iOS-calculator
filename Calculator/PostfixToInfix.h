@@ -12,6 +12,6 @@
 @interface PostfixToInfix : NSObject
 
 // infix converter for CalculatorBrain programs
-+(NSString *)convert:(NSArray *)program;
++(NSString *)convert:(id)program;
 
 @end

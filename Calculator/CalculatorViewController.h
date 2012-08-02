@@ -11,8 +11,9 @@
 @interface CalculatorViewController : UIViewController
 
 - (id)brain;
+- (void)remakeTheCalculator:(id)commLinkup;
+- (void)setProgram:(id)aProgram andVariables:(id)someVariables;
 
-@property (weak, nonatomic) IBOutlet UILabel *history;
-@property (weak, nonatomic) IBOutlet UILabel *display;
+@property (nonatomic, weak) id graphViewCtl;
 
 @end
