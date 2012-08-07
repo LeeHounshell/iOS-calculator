@@ -3,7 +3,7 @@
 //  Calculator
 //
 //  Created by Lee Hounshell on 5/29/12.
-//  Copyright (c) 2012 H.A.R.L.I.E. All rights reserved.
+//  Copyright (c) 2012 Harlie All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

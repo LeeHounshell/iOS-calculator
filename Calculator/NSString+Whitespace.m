@@ -3,7 +3,7 @@
 //  Calculator
 //
 //  Created by Lee Hounshell on 7/2/12.
-//  Copyright (c) 2012 H.A.R.L.I.E. All rights reserved.
+//  Copyright (c) 2012 Harlie All rights reserved.
 //
 
 #import "NSString+Whitespace.h"
