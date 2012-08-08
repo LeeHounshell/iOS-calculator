@@ -24,6 +24,13 @@
 		9BBEF9D51575633C00DAF105 /* CalculatorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BBEF9D41575633C00DAF105 /* CalculatorViewController.m */; };
 		9BBEF9DD15756BAF00DAF105 /* CalculatorBrain.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BBEF9DC15756BAF00DAF105 /* CalculatorBrain.m */; };
 		9BCDA64415CA29EB00C0915E /* PopupCalculatorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BCDA64315CA29EB00C0915E /* PopupCalculatorViewController.m */; };
+		9BFA8B2E15D2104A00DFAE7B /* blueButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2715D2104A00DFAE7B /* blueButton.png */; };
+		9BFA8B2F15D2104A00DFAE7B /* greenButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2815D2104A00DFAE7B /* greenButton.png */; };
+		9BFA8B3015D2104A00DFAE7B /* greyButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2915D2104A00DFAE7B /* greyButton.png */; };
+		9BFA8B3115D2104A00DFAE7B /* orangeButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2A15D2104A00DFAE7B /* orangeButton.png */; };
+		9BFA8B3215D2104A00DFAE7B /* redButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2B15D2104A00DFAE7B /* redButton.png */; };
+		9BFA8B3315D2104A00DFAE7B /* rustyButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2C15D2104A00DFAE7B /* rustyButton.png */; };
+		9BFA8B3415D2104A00DFAE7B /* yellowButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 9BFA8B2D15D2104A00DFAE7B /* yellowButton.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +64,13 @@
 		9BBEF9DC15756BAF00DAF105 /* CalculatorBrain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CalculatorBrain.m; sourceTree = "<group>"; };
 		9BCDA64215CA29EB00C0915E /* PopupCalculatorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PopupCalculatorViewController.h; sourceTree = "<group>"; };
 		9BCDA64315CA29EB00C0915E /* PopupCalculatorViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PopupCalculatorViewController.m; sourceTree = "<group>"; };
+		9BFA8B2715D2104A00DFAE7B /* blueButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = blueButton.png; sourceTree = "<group>"; };
+		9BFA8B2815D2104A00DFAE7B /* greenButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = greenButton.png; sourceTree = "<group>"; };
+		9BFA8B2915D2104A00DFAE7B /* greyButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = greyButton.png; sourceTree = "<group>"; };
+		9BFA8B2A15D2104A00DFAE7B /* orangeButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = orangeButton.png; sourceTree = "<group>"; };
+		9BFA8B2B15D2104A00DFAE7B /* redButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = redButton.png; sourceTree = "<group>"; };
+		9BFA8B2C15D2104A00DFAE7B /* rustyButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rustyButton.png; sourceTree = "<group>"; };
+		9BFA8B2D15D2104A00DFAE7B /* yellowButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = yellowButton.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +117,7 @@
 		9BBEF9C41575633C00DAF105 /* Calculator */ = {
 			isa = PBXGroup;
 			children = (
+				9BFA8B2615D2104A00DFAE7B /* images */,
 				9BBEF9CD1575633C00DAF105 /* CalculatorAppDelegate.h */,
 				9BBEF9CE1575633C00DAF105 /* CalculatorAppDelegate.m */,
 				9BBEF9D01575633C00DAF105 /* iPhone.storyboard */,
@@ -139,6 +154,20 @@
 				9BBEF9CC1575633C00DAF105 /* Calculator-Prefix.pch */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		9BFA8B2615D2104A00DFAE7B /* images */ = {
+			isa = PBXGroup;
+			children = (
+				9BFA8B2715D2104A00DFAE7B /* blueButton.png */,
+				9BFA8B2815D2104A00DFAE7B /* greenButton.png */,
+				9BFA8B2915D2104A00DFAE7B /* greyButton.png */,
+				9BFA8B2A15D2104A00DFAE7B /* orangeButton.png */,
+				9BFA8B2B15D2104A00DFAE7B /* redButton.png */,
+				9BFA8B2C15D2104A00DFAE7B /* rustyButton.png */,
+				9BFA8B2D15D2104A00DFAE7B /* yellowButton.png */,
+			);
+			path = images;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -195,6 +224,13 @@
 				9BBEF9C91575633C00DAF105 /* InfoPlist.strings in Resources */,
 				9BBEF9D21575633C00DAF105 /* iPhone.storyboard in Resources */,
 				9B9978FA15B943F500E834C0 /* iPad.storyboard in Resources */,
+				9BFA8B2E15D2104A00DFAE7B /* blueButton.png in Resources */,
+				9BFA8B2F15D2104A00DFAE7B /* greenButton.png in Resources */,
+				9BFA8B3015D2104A00DFAE7B /* greyButton.png in Resources */,
+				9BFA8B3115D2104A00DFAE7B /* orangeButton.png in Resources */,
+				9BFA8B3215D2104A00DFAE7B /* redButton.png in Resources */,
+				9BFA8B3315D2104A00DFAE7B /* rustyButton.png in Resources */,
+				9BFA8B3415D2104A00DFAE7B /* yellowButton.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
