@@ -7,8 +7,7 @@
 //
 
 #import "CalculatorViewController.h"
-#import "CalculatorBrain.h"
-#import "GraphViewController.h"
+
 
 @interface CalculatorViewController ()
 
@@ -18,7 +17,7 @@
 
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL userPressedVariableSET;
-@property (nonatomic, strong) CalculatorBrain *theBrain;
+@property (nonatomic, strong) id<CalculationControlProtocol> theBrain;
 
 @end
 
@@ -107,7 +106,7 @@
 //----------------------------------------------------------------------------
 
 
-- (CalculatorBrain *)theBrain
+- (id<CalculationControlProtocol>)theBrain
 {
     if (! _theBrain)
     {
@@ -128,7 +127,7 @@
     [self.graphViewCtl doGraph];
 }
 
-- (id)brain
+- (id<CalculationControlProtocol>)brain
 {
     return self.theBrain;
 }

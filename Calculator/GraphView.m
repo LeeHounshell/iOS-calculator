@@ -9,6 +9,7 @@
 #import "GraphView.h"
 #import "AxesDrawer.h"
 
+
 @implementation GraphView
 
 @synthesize delegate = _delegate;
@@ -56,6 +57,13 @@
 - (void)setScale:(CGFloat)scale
 {
     _scale = scale;
+    [self setNeedsDisplay]; // redraw to scale
+}
+
+- (void)moveToOriginWithDefaultScale
+{
+    self.origin = CGPointMake(0, 0);
+    self.scale = DEFAULT_SIZE;
     [self setNeedsDisplay]; // redraw to scale
 }
 

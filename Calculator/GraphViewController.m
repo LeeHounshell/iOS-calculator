@@ -11,6 +11,7 @@
 #import "PopupCalculatorViewController.h"
 #import "CalculatorProgramsTableViewController.h"
 
+
 @interface GraphViewController () <CalculatorProgramsTableViewControllerDelegate>
 
 @property (nonatomic, weak) IBOutlet GraphView *graphView;
@@ -72,6 +73,7 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     self.setupComplete = YES;
+    [self.graphView moveToOriginWithDefaultScale];
     [self doGraph];
 }
 
@@ -127,7 +129,7 @@
 
 //----------------------------------------------------------------------------
 
-- (CalculatorBrain *)brain;
+- (id<CalculationControlProtocol>)brain;
 {
     return [self.delegate brain];
 }
@@ -140,7 +142,7 @@
     else {
         if (delegate != _delegate) {
             id old_delegate = _delegate;
-            CalculatorBrain *theBrain = [old_delegate brain];
+            id<CalculationControlProtocol>theBrain = [old_delegate brain];
             id program = [theBrain program];
             id variables = [theBrain variables];
             _delegate = delegate;
@@ -179,7 +181,7 @@
     UITapGestureRecognizer *tapper = [[UITapGestureRecognizer alloc] 
                                       initWithTarget:self.graphView 
                                       action:@selector(tapHandler:)];
-    tapper.numberOfTapsRequired = 3; 
+    tapper.numberOfTapsRequired = 3; // tripple tap
     [self.graphView addGestureRecognizer:tapper];
     self.graphView.delegate = self;
 }
@@ -199,10 +201,16 @@
     if (description && ! [description isEqualToString:@""]) {
         newTitle = [NSString stringWithFormat:@"Y=%@", description];
     }
-    NSLog(@"the splitViewBarButtonItem has changed.  newTitle=%@", newTitle);
-    [self setSplitViewBarButtonTitle:newTitle];
-    if (self.delegate) {
-        [self setupSplitViewBarButtonItemAtPosition:0]; // setup the back button, if needed
+    if (! UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        NSLog(@"iPhone: graph title=%@", newTitle);
+        self.navigationItem.title = newTitle;
+    }
+    else {
+        NSLog(@"iPad: splitView newTitle=%@", newTitle);
+        [self setSplitViewBarButtonTitle:newTitle];
+        if (self.delegate) {
+            [self setupSplitViewBarButtonItemAtPosition:0]; // setup the back button, if needed
+        }
     }
     [self.graphView setNeedsDisplay]; // draw the graph
 }
@@ -310,7 +318,7 @@
         favorites = [NSMutableArray array];
     }
     if ([self isValidProgram]) {
-        CalculatorBrain *theBrain = [self brain];
+        id<CalculationControlProtocol> theBrain = [self brain];
         NSDictionary *programWithVariables = [[NSDictionary alloc] initWithObjectsAndKeys:
                                               [theBrain program], @"program",
                                               [theBrain variables], @"variables", nil];
