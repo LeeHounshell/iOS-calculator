@@ -124,6 +124,7 @@
 {
     NSLog(@"GraphViewController ROTATING");
     [self dismissPopover];
+    [self.graphView moveToOriginWithDefaultScale];
 }
 
 

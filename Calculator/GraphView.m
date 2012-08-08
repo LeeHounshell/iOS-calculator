@@ -10,6 +10,11 @@
 #import "AxesDrawer.h"
 
 
+@interface GraphView ()
+
+@end
+
+
 @implementation GraphView
 
 @synthesize delegate = _delegate;
@@ -62,9 +67,17 @@
 
 - (void)moveToOriginWithDefaultScale
 {
-    self.origin = CGPointMake(0, 0);
+    NSLog(@"reset origin and scale");
+    UIInterfaceOrientation orientation = [UIDevice currentDevice].orientation;
+    if ((UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
+     && (! UIInterfaceOrientationIsPortrait(orientation))) {
+        self.origin = CGPointMake(30, 125);
+    }
+    else {
+        self.origin = CGPointMake(0, 0);
+    }
     self.scale = DEFAULT_SIZE;
-    [self setNeedsDisplay]; // redraw to scale
+    [self setNeedsDisplay];
 }
 
 - (void)pinchHandler:(UIPinchGestureRecognizer *)gesture
@@ -102,6 +115,7 @@
 // An empty implementation adversely affects performance during animation.
 - (void)drawRect:(CGRect)rect
 {
+    BOOL validProgram = [self.delegate isValidProgram];
     CGContextRef context = UIGraphicsGetCurrentContext();
     
     CGPoint midPoint; // center of our bounds in our coordinate system
@@ -119,7 +133,7 @@
     
     [AxesDrawer drawAxesInRect:self.bounds originAtPoint:midPoint scale:self.scale*self.contentScaleFactor];
     
-    if (! [self.delegate isValidProgram]) {
+    if (! validProgram) {
         NSLog(@"GraphView: nothing to graph except the axes");
         return;
     }
