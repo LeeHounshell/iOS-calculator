@@ -130,7 +130,7 @@
 //---------
 static  NSNumber *_lastResult = nil; // used to supply a default value when operation pressed but empty stack
 
-+ (double)lastDisplayResult
++ (double)lastCalculationResult
 {
     if (! _lastResult) {
         _lastResult = [NSNumber numberWithDouble:(double)0];
@@ -156,7 +156,7 @@ static  NSNumber *_lastResult = nil; // used to supply a default value when oper
     else { // --- nothing on the program stack! (but user pressed an operation or ENTER)
         //result = NAN;
         //NSLog(@"WARNING: empty stack! -- using NAN");
-        result = [CalculatorBrain lastDisplayResult];
+        result = [CalculatorBrain lastCalculationResult];
         NSLog(@"WARNING: empty stack! -- using %g", result);
     }
     if ([topOfStack isKindOfClass:[NSNumber class]])

@@ -9,7 +9,6 @@
 #import <UIKit/UIKit.h>
 #import "CalculatorViewController.h"
 #import "GraphView.h"
-#import "CalculatorBrain.h"
 
 
 @interface GraphViewController : UIViewController <GraphViewDelegate, UISplitViewControllerDelegate>

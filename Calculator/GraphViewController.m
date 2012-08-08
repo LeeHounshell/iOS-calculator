@@ -8,6 +8,7 @@
 
 #import "GraphViewController.h"
 #import "GraphView.h"
+#import "CalculatorBrain.h"
 #import "PopupCalculatorViewController.h"
 #import "CalculatorProgramsTableViewController.h"
 

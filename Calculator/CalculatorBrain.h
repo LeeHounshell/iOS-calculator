@@ -19,6 +19,6 @@
 + (NSString *)descriptionOfProgram:(id)program;
 + (NSString *)descriptionOfVariables:(id)variables forProgram:(id)program;
 + (NSSet *)variablesUsedInProgram:(id)program;
-+ (double)lastDisplayResult;
++ (double)lastCalculationResult;
 
 @end

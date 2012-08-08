@@ -7,6 +7,8 @@
 //
 
 #import "CalculatorViewController.h"
+#import "CalculatorBrain.h"
+#import "GraphViewController.h"
 
 
 @interface CalculatorViewController ()
@@ -215,7 +217,7 @@
     }
     //NSLog(@"operationPressed=%@", sender.currentTitle);
     if ([@"yⁿ" isEqualToString:sender.currentTitle]) {
-        double lastCalculation = [CalculatorBrain lastDisplayResult];
+        double lastCalculation = [CalculatorBrain lastCalculationResult];
         self.display.text = [NSString stringWithFormat:@"%g", lastCalculation];
     }
     double result = [self.theBrain performOperation:sender.currentTitle usingVariableValues:[self.theBrain variables]];
